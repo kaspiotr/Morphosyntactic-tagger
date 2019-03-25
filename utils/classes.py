@@ -30,6 +30,8 @@ class Token:
         self.token_tag = token_tag
         self.changed_form = None
         self.base_form = None
+        self.tag = None
+        self.proposed_tags = []
         self.space_before = None
         self.interpretations = []
         self.gold_form = None
@@ -39,6 +41,12 @@ class Token:
 
     def add_base_form(self, base_form):
         self.base_form = base_form
+
+    def add_tag(self, tag):
+        self.tag = tag
+
+    def add_proposed_tags(self, proposed_tag):
+        self.proposed_tags.append(proposed_tag)
 
     def add_interpretation(self, interpretation):
         self.interpretations.append(interpretation)

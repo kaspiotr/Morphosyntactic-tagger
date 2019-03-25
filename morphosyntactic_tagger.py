@@ -26,9 +26,32 @@ def parse_xml(file_path):
                 sentence = Sentence(child.tag)
                 for grandchild in list(child):
                     token = Token(grandchild.tag)
-                    token.add_changed_form(grandchild[0][0][0])
-                    # if grandchild[0][0][0].text is not ',' and grandchild[0][0][0].text is not '.':
-                    #     token.add_base_form(grandchild[0][1][0][0][0])
+                    token.add_changed_form(grandchild[0][0][0].text)
+                    for grand_x2_child in list(grandchild[0]):
+                        if grand_x2_child.get('name') == 'interps':
+                            print(grand_x2_child.attrib)
+                            for grand_x3_child in grand_x2_child:
+                                if grand_x3_child.get('type') == 'lex':
+                                    print("\t-", grand_x3_child.attrib)
+                                    for grand_x4_child in grand_x3_child:
+                                        print("\t\t-", grand_x4_child.attrib)
+                                        if grand_x4_child.get('name') == 'base':
+                                            token.add_base_form(grand_x4_child[0].text)
+                                        if grand_x4_child.get('name') == 'msd':
+                                            print("\t\t\t-", grand_x4_child[0].tag)
+                                            for grand_x6_child in grand_x4_child[0]:
+                                                print("\t\t\t\t-", grand_x6_child.get('value'))
+                                                token.add_proposed_tags(grand_x6_child.get('value'))
+                        if grand_x2_child.get('name') == 'disamb':
+                            print(grand_x2_child.attrib)
+                            for grand_x3_child in grand_x2_child:
+                                print("\t-", grand_x3_child.attrib)
+                                for grand_x4_child in grand_x3_child:
+                                    print("\t\t-", grand_x4_child.attrib)
+                                    if grand_x4_child.get('name') == 'interpretation':
+                                        print("\t\t\t-", grand_x4_child[0].text)
+                                        token.add_tag(grand_x4_child[0].text)
+
                     sentence.add_token(token)
                 paragraph.add_sentence(sentence)
             add_paragraph(paragraph)
@@ -43,9 +66,12 @@ def main():
             print("\tSentence: ", sentence.sentence_tag)
             for token in sentence.tokens:
                 print("\t\tToken: ", token.token_tag)
-                print("\t\t\t-changed form: ", token.changed_form.text)
-                # if token.base_form is not None:
-                #     print("\t\t\t-base form: ", token.base_form.text)
+                print("\t\t\t-changed form: ", token.changed_form)
+                print("\t\t\t-base form: ", token.base_form)
+                print("\t\t\t-tag: ", token.tag)
+                print("\t\t\t-proposed tags: ")
+                for proposed_tag in token.proposed_tags:
+                    print("\t\t\t\t-", proposed_tag)
 
 
 if __name__ == '__main__':
