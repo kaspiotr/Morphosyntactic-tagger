@@ -44,12 +44,14 @@ def parse_xml(file_path):
                                     for grand_x4_child in grand_x3_child:
                                         print("\t\t-", grand_x4_child.attrib)
                                         if grand_x4_child.get('name') == 'base':
-                                            token.add_base_form(grand_x4_child[0].text)
+                                            interp_base_form = grand_x4_child[0].text
+                                            # token.add_base_form(interp_base_form)
                                         if grand_x4_child.get('name') == 'msd':
                                             print("\t\t\t-", grand_x4_child[0].tag)
                                             for grand_x6_child in grand_x4_child[0]:
                                                 print("\t\t\t\t-", grand_x6_child.get('value'))
-                                                token.add_proposed_tags(grand_x6_child.get('value'))
+                                                proposed_tag = interp_base_form + ":" + grand_x6_child.get('value')
+                                                token.add_proposed_tags(proposed_tag)
                         if grand_x2_child.get('name') == 'disamb':
                             print(grand_x2_child.attrib)
                             for grand_x3_child in grand_x2_child:
@@ -58,9 +60,11 @@ def parse_xml(file_path):
                                     print("\t\t-", grand_x4_child.attrib)
                                     if grand_x4_child.get('name') == 'interpretation':
                                         tag_with_base_form = grand_x4_child[0].text.split(":")
+                                        disamb_base_form = tag_with_base_form[0]
                                         tag_list = tag_with_base_form[1:]
                                         tag = ":".join(tag_list)
                                         print("\t\t\t-", tag)
+                                        token.add_base_form(disamb_base_form)
                                         token.add_tag(tag)
 
                     sentence.add_token(token)
