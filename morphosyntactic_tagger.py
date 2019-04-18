@@ -32,6 +32,9 @@ def parse_xml(file_path):
                 for grandchild in list(child):
                     token = Token(grandchild.tag)
                     token.add_changed_form(grandchild[0][0][0].text)
+                    grand_x4_child = grandchild[0][1][0]
+                    if grand_x4_child.tag[-6:] == "binary":
+                        token.add_separator(str(grand_x4_child.attrib.get('value')).capitalize())
                     for grand_x2_child in list(grandchild[0]):
                         if grand_x2_child.get('name') == 'interps':
                             print(grand_x2_child.attrib)
@@ -87,7 +90,7 @@ def write_paragraph_str_to_file(file_path, paragraph):
 def main():
     for next_paragraph in parse_xml(xml_file_path):
         # write_paragraph_to_json_file(json_file_path, next_paragraph)
-        # write_to_jsonlines_file(jsonlines_file_path, next_paragraph)
+        write_to_jsonlines_file(jsonlines_file_path, next_paragraph)
         write_paragraph_str_to_file(json_file_path, next_paragraph)
         print("Paragraph: ", next_paragraph.paragraph_tag)
         for sentence in next_paragraph.sentences:
@@ -97,6 +100,7 @@ def main():
                 print("\t\t\t-changed form: ", token.changed_form)
                 print("\t\t\t-base form: ", token.base_form)
                 print("\t\t\t-tag: ", token.tag)
+                print("\t\t\t-separator: ", token.separator)
                 print("\t\t\t-proposed tags: ")
                 for proposed_tag in token.proposed_tags:
                     print("\t\t\t\t-", proposed_tag)

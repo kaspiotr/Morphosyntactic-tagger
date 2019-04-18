@@ -45,6 +45,7 @@ class Token:
         self.changed_form = None
         self.base_form = None
         self.tag = None
+        self.separator = False
         self.proposed_tags = []
         self.space_before = None
         self.interpretations = []
@@ -59,6 +60,9 @@ class Token:
     def add_tag(self, tag):
         self.tag = tag
 
+    def add_separator(self, separator):
+        self.separator = separator
+
     def add_proposed_tags(self, proposed_tag):
         self.proposed_tags.append(proposed_tag)
 
@@ -72,6 +76,9 @@ class Token:
         token_str += "\","
         token_str += "\"tag\":\""
         token_str += self.tag
+        token_str += "\","
+        token_str += "\"separator\":\""
+        token_str += str(self.separator)
         token_str += "\","
         token_str += "\"proposed_tags\":["
         for tag in self.proposed_tags:
