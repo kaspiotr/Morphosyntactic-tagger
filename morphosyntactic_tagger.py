@@ -1,101 +1,53 @@
 import xml.etree.ElementTree as ET
-import json
-import jsonlines
-import io
 from utils.classes import Paragraph, Sentence, Token
 
+namespaces = {'cor': 'http://www.tei-c.org/ns/1.0',
+              'nkjp': 'http://www.nkjp.pl/ns/1.0',
+              'xi': 'http://www.w3.org/2001/XInclude'}
+
 xml_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/010-2-000000001/ann_morphosyntax.xml'
-xml_file_path2 = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/030-2-000000009/ann_morphosyntax.xml'
-xml_file_path3 = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/train-gold.xml'
-jsonlines_file_path = "/home/kaspiotr/Dev/MorphosyntacticTagger/resources/output.jsonl"
-json_file_path = "/home/kaspiotr/Dev/MorphosyntacticTagger/resources/output.json"
-
-paragraphs = []
-
-
-def add_paragraph(paragraph):
-    paragraphs.append(paragraph)
 
 
 def parse_xml(file_path):
-    # root = ET.parse(xml_file_path).getroot().getchildren()[1].getchildren()[1].getchildren()
-    for event, element in ET.iterparse(file_path, events=("end",)):
-        raw_tag = element.tag
-        if "{" in element.tag:
-            raw_tag = element.tag.replace(element.tag[element.tag.find("{"): element.tag.find("}") + 1], '')
-        # print(element.tag[element.tag.find("{"): element.tag.find("}")+1])
-        if event == "end" and raw_tag == "p":  # use "p" to parse paragraphs in xml files form NKJP, "chunk" to parse chunks from Poleval 2017
-            paragraph = Paragraph(element.tag)
-            #  paragraph_printout = "Paragraph: " + element.tag
-            for child in list(element):
-                sentence = Sentence(child.tag)
-                for grandchild in list(child):
-                    token = Token(grandchild.tag)
-                    token.add_changed_form(grandchild[0][0][0].text)
-                    grand_x4_child = grandchild[0][1][0]
-                    if grand_x4_child.tag[-6:] == "binary":
-                        token.add_separator(str(grand_x4_child.attrib.get('value')).capitalize())
-                    for grand_x2_child in list(grandchild[0]):
-                        if grand_x2_child.get('name') == 'interps':
-                            print(grand_x2_child.attrib)
-                            for grand_x3_child in grand_x2_child:
-                                if grand_x3_child.get('type') == 'lex':
-                                    print("\t-", grand_x3_child.attrib)
-                                    for grand_x4_child in grand_x3_child:
-                                        print("\t\t-", grand_x4_child.attrib)
-                                        if grand_x4_child.get('name') == 'base':
-                                            interp_base_form = grand_x4_child[0].text
-                                            # token.add_base_form(interp_base_form)
-                                        if grand_x4_child.get('name') == 'msd':
-                                            print("\t\t\t-", grand_x4_child[0].tag)
-                                            for grand_x6_child in grand_x4_child[0]:
-                                                print("\t\t\t\t-", grand_x6_child.get('value'))
-                                                proposed_tag = interp_base_form + ":" + grand_x6_child.get('value')
-                                                token.add_proposed_tags(proposed_tag)
-                        if grand_x2_child.get('name') == 'disamb':
-                            print(grand_x2_child.attrib)
-                            for grand_x3_child in grand_x2_child:
-                                print("\t-", grand_x3_child.attrib)
-                                for grand_x4_child in grand_x3_child:
-                                    print("\t\t-", grand_x4_child.attrib)
-                                    if grand_x4_child.get('name') == 'interpretation':
-                                        tag_with_base_form = grand_x4_child[0].text.split(":")
-                                        disamb_base_form = tag_with_base_form[0]
-                                        tag_list = tag_with_base_form[1:]
-                                        tag = ":".join(tag_list)
-                                        print("\t\t\t-", tag)
-                                        token.add_base_form(disamb_base_form)
-                                        token.add_tag(tag)
-
+    global token, sentence, paragraph, interps_base_form
+    for event, element in ET.iterparse(file_path, events=("start", "end",)):
+        if event == "start":
+            if element.tag == '{http://www.tei-c.org/ns/1.0}p':
+                paragraph = Paragraph(element.tag)
+            if element.tag == '{http://www.tei-c.org/ns/1.0}s':
+                sentence = Sentence(element.tag)
+            if element.tag == '{http://www.tei-c.org/ns/1.0}f' and element.get('name') == "orth":
+                token = Token(element.tag)
+        if event == "end":
+            if element.tag == '{http://www.tei-c.org/ns/1.0}f':
+                if element.get('name') == "orth":
+                    token.add_changed_form(element[0].text)
                     sentence.add_token(token)
+                if element.get('name') == "nps":
+                    token.add_separator(True)
+                if element.get('name') == "interps":
+                    for subelement in list(element.iter('{http://www.tei-c.org/ns/1.0}f')):
+                        if subelement.get('name') == "base":
+                            interps_base_form = subelement[0].text
+                        if subelement.get('name') == "msd":
+                            for proposed_tag_element in list(subelement[0].iter('{http://www.tei-c.org/ns/1.0}symbol')):
+                                if proposed_tag_element.get('value') != "":
+                                    token.add_proposed_tags(interps_base_form + ":" + proposed_tag_element.get('value'))
+                                else:
+                                    token.add_proposed_tags(interps_base_form)
+                if element.get('name') == "disamb":
+                    disamb_base_form_with_tag = element[0][1][0].text.split(":")
+                    token.add_base_form(disamb_base_form_with_tag[0])
+                    token.add_tag(":".join(disamb_base_form_with_tag[1:]))
+            if element.tag == '{http://www.tei-c.org/ns/1.0}s':
                 paragraph.add_sentence(sentence)
-            add_paragraph(paragraph)
-            yield paragraph
-            element.clear()
-
-
-def write_to_jsonlines_file(file_path, paragraph):
-    fp = io.open(file_path, "a", encoding="utf-8")  # file-like object
-    with jsonlines.Writer(fp) as writer:
-        writer.write(paragraph.create_paragraph_line_string())
-    fp.close()
-
-
-def write_paragraph_str_to_file(file_path, paragraph):
-    fp = open(file_path, "w+")
-    fp.write(paragraph.create_paragraph_line_string())
-    fp.close()
-
-# def write_paragraph_to_json_file(json_file_path, paragraph):
-#     data = json.loads(paragraph.create_paragraph_line_string())
-#     print(data)
+            if element.tag == '{http://www.tei-c.org/ns/1.0}p':
+                yield paragraph
+                element.clear()
 
 
 def main():
     for next_paragraph in parse_xml(xml_file_path):
-        # write_paragraph_to_json_file(json_file_path, next_paragraph)
-        write_to_jsonlines_file(jsonlines_file_path, next_paragraph)
-        write_paragraph_str_to_file(json_file_path, next_paragraph)
         print("Paragraph: ", next_paragraph.paragraph_tag)
         for sentence in next_paragraph.sentences:
             print("\tSentence: ", sentence.sentence_tag)
