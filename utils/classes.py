@@ -7,7 +7,7 @@ class Paragraph:
         self.sentences.append(sentence)
 
     def create_paragraph_line_string(self):
-        paragraph_str = r"{["
+        paragraph_str = "{\"sentence\": ["
         for sentence in self.sentences:
             if sentence is not self.sentences[0]:
                 paragraph_str += ", "
@@ -33,7 +33,7 @@ class Sentence:
         self.tokens.append(token)
 
     def create_sentence_line_str(self):
-        sentence_str = "{["
+        sentence_str = "{\"token\": ["
         for token in self.tokens:
             if token is not self.tokens[0]:
                 sentence_str += ", "
