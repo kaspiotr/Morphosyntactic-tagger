@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-import jsonlines
 from utils.classes import Paragraph, Sentence, Token
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
@@ -47,7 +46,7 @@ def parse_xml(file_path):
                 element.clear()
 
 
-def write_to_jsonlines_file(path, file_name, data):
+def write_str_to_jsonl_file(path, file_name, data):
     file_path_with_name_and_ext = path + file_name + '.jsonl'
     with open(file_path_with_name_and_ext, 'a') as writer:
         writer.write(data)
@@ -56,7 +55,7 @@ def write_to_jsonlines_file(path, file_name, data):
 
 def main():
     for next_paragraph in parse_xml(xml_file_path):
-        write_to_jsonlines_file('./', 'out', next_paragraph.create_paragraph_line_string())
+        write_str_to_jsonl_file('./', 'out', next_paragraph.create_paragraph_line_string())
         print("Paragraph: ", next_paragraph.paragraph_tag)
         for sentence in next_paragraph.sentences:
             print("\tSentence: ", sentence.sentence_tag)
