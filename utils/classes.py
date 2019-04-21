@@ -95,11 +95,11 @@ class Token:
         token_str += "true" if self.separator else "false"
         token_str += ", "
         token_str += "\"proposed_tags\": ["
-        for tag in self.proposed_tags:
-            if tag is not self.proposed_tags[0]:
+        for index in range(0, len(self.proposed_tags)):
+            if index != 0:
                 token_str += ", "
             token_str += "\""
-            token_str += str(tag)
+            token_str += str(self.proposed_tags[index])
             token_str += "\""
         token_str += "]}"
         return token_str
