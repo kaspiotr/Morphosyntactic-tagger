@@ -1,11 +1,14 @@
 import xml.etree.ElementTree as ET
+import glob
+import errno
 from utils.classes import Paragraph, Sentence, Token
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
       'nkjp': '{http://www.nkjp.pl/ns/1.0}',
       'xi': '{http://www.w3.org/2001/XInclude}'}
 
-xml_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/010-2-000000001/ann_morphosyntax.xml'
+nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
+output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
 
 
 def parse_xml(file_path):
@@ -53,21 +56,21 @@ def write_str_to_jsonl_file(path, file_name, data):
         writer.write('\n')
 
 
+def write_str_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
+    path = directory_path + '*/' +'ann_morphosyntax.xml'
+    xml_files = glob.glob(path)
+    for xml_file_name in xml_files:
+        try:
+            with open(xml_file_name) as f:
+                for next_paragraph in parse_xml(xml_file_name):
+                    write_str_to_jsonl_file(output_file_path, output_file_name, next_paragraph.create_paragraph_line_string())
+        except IOError as exc:
+            if exc.errno != errno.EISDIR:
+                raise
+
+
 def main():
-    for next_paragraph in parse_xml(xml_file_path):
-        write_str_to_jsonl_file('./', 'out', next_paragraph.create_paragraph_line_string())
-        print("Paragraph: ", next_paragraph.paragraph_tag)
-        for sentence in next_paragraph.sentences:
-            print("\tSentence: ", sentence.sentence_tag)
-            for token in sentence.tokens:
-                print("\t\tToken: ", token.token_tag)
-                print("\t\t\t-changed form: ", token.changed_form)
-                print("\t\t\t-base form: ", token.base_form)
-                print("\t\t\t-tag: ", token.tag)
-                print("\t\t\t-separator: ", token.separator)
-                print("\t\t\t-proposed tags: ")
-                for proposed_tag in token.proposed_tags:
-                    print("\t\t\t\t-", proposed_tag)
+    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'test_output')
 
 
 if __name__ == '__main__':
