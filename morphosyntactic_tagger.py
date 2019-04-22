@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import glob
 import errno
+import json
 from utils.classes import Paragraph, Sentence, Token
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
@@ -49,19 +50,19 @@ def parse_xml(file_path):
                 element.clear()
 
 
-def write_str_to_jsonl_file(path, file_name, data):
+def write_str_to_jsonl_file(path, file_name, data_str):
     file_path_with_name_and_ext = path + file_name + '.jsonl'
     with open(file_path_with_name_and_ext, 'a') as writer:
-        writer.write(data)
+        writer.write(data_str)
         writer.write('\n')
 
 
 def write_str_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
-    path = directory_path + '*/' +'ann_morphosyntax.xml'
+    path = directory_path + '*/' + 'ann_morphosyntax.xml'
     xml_files = glob.glob(path)
     for xml_file_name in xml_files:
         try:
-            with open(xml_file_name) as f:
+            with open(xml_file_name):
                 for next_paragraph in parse_xml(xml_file_name):
                     write_str_to_jsonl_file(output_file_path, output_file_name, next_paragraph.create_paragraph_line_string())
         except IOError as exc:
@@ -69,8 +70,29 @@ def write_str_from_xmls_in_directory(directory_path, output_file_path, output_fi
                 raise
 
 
+def write_dict_to_jsonl_file(path, file_name, data_dict):
+    file_path_with_name_and_ext = path + file_name + '.jsonl'
+    with open(file_path_with_name_and_ext, 'a') as fp:
+        json.dump(data_dict, fp, ensure_ascii=False, indent=None)
+        fp.write('\n')
+
+
+def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
+    path = directory_path + '*/' + 'ann_morphosyntax.xml'
+    xml_files = glob.glob(path)
+    for xml_file_name in xml_files:
+        try:
+            with open(xml_file_name):
+                for next_paragraph in parse_xml(xml_file_name):
+                    write_dict_to_jsonl_file(output_file_path, output_file_name, next_paragraph.create_paragraph_dict())
+        except IOError as exec:
+            if exec.errno != errno.EISDIR:
+                raise
+
+
 def main():
-    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'test_output')
+    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output')
+    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output2')
 
 
 if __name__ == '__main__':

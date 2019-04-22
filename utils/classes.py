@@ -16,9 +16,10 @@ class Paragraph:
         return paragraph_str
 
     def create_paragraph_dict(self):
-        paragraph_dict = {"sentences_list": []}
+        paragraph_dict = {"sentence": []}
         for sentence in self.sentences:
-            paragraph_dict["sentences_list"].append(sentence.create_sentence_dict())
+            paragraph_dict["sentence"].append(sentence.create_sentence_dict())
+        return paragraph_dict
 
 
 class Sentence:
@@ -39,9 +40,10 @@ class Sentence:
         return sentence_str
 
     def create_sentence_dict(self):
-        sentence_dict = {"tokens_list": []}
+        sentence_dict = {"token": []}
         for token in self.tokens:
-            sentence_dict["tokens_list"].append(token.create_token_dict())
+            sentence_dict["token"].append(token.create_token_dict())
+        return sentence_dict
 
 
 class Token:
