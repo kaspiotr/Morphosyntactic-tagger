@@ -13,7 +13,7 @@ output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
 
 
 def parse_xml(file_path):
-    global token, sentence, paragraph, interps_base_form
+    global token, sentence, paragraph, interps_base_form, interps_part_of_speech
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
         if event == "start":
             if element.tag == ns.get('cor') + 'p':
@@ -33,10 +33,12 @@ def parse_xml(file_path):
                     for subelement in list(element.iter(ns.get('cor') + 'f')):
                         if subelement.get('name') == "base":
                             interps_base_form = subelement[0].text
+                        if subelement.get('name') == "ctag":
+                            interps_part_of_speech = subelement[0].get('value')
                         if subelement.get('name') == "msd":
                             for proposed_tag_element in list(subelement[0].iter(ns.get('cor') + 'symbol')):
                                 if proposed_tag_element.get('value') != "":
-                                    token.add_proposed_tags(interps_base_form + ":" + proposed_tag_element.get('value'))
+                                    token.add_proposed_tags(interps_base_form + ":" + interps_part_of_speech + ":" + proposed_tag_element.get('value'))
                                 else:
                                     token.add_proposed_tags(interps_base_form)
                 if element.get('name') == "disamb":
@@ -92,8 +94,8 @@ def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_f
 
 
 def main():
-    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_ver2')
-    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output2_ver2')
+    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output4_str')
+    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output4_dict')
 
 
 if __name__ == '__main__':
