@@ -80,7 +80,7 @@ def write_dict_to_jsonl_file(path, file_name, data_dict):
 
 def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
     path = directory_path + '*/' + 'ann_morphosyntax.xml'
-    xml_files = glob.glob(path)
+    xml_files = glob.iglob(path)
     file_path_with_name_and_ext = output_file_path + output_file_name + '.jsonl'
     with jsonlines.open(file_path_with_name_and_ext, 'a', sort_keys=False) as writer:
         for xml_file_name in xml_files:
@@ -94,8 +94,8 @@ def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_f
 
 
 def main():
-    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output4_str')
-    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output4_dict')
+    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_11_str')
+    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_11_dict')
 
 
 if __name__ == '__main__':
