@@ -88,9 +88,14 @@ class Token:
         for index in range(0, len(self.proposed_tags)):
             if index != 0:
                 token_str += ", "
-            token_str += "\""
-            token_str += "\\\"" if len(str(self.proposed_tags[index])) == 1 and ord(str(self.proposed_tags[index])) == 34 else str(self.proposed_tags[index])
-            token_str += "\""
+            if self.proposed_tags[index] is None:
+                continue
+            token_str += "{\"tag\": \""
+            token_str += "\\\"" if len(str(self.proposed_tags[index])) == 1 and ord(str(self.proposed_tags[index])) == 34 else str(self.proposed_tags[index].split(":")[0])
+            token_str += "\","
+            token_str += "\"changed_form\": \""
+            token_str += str(":".join(self.proposed_tags[index].split(":")[1:]))
+            token_str += "\"}"
         token_str += "]}"
         return token_str
 
@@ -101,6 +106,13 @@ class Token:
         token_dict["tag"] = self.tag
         token_dict["separator"] = self.separator
         token_dict["proposed_tags"] = []
-        for tag in self.proposed_tags:
-            token_dict["proposed_tags"].append(tag)
+        for base_form_with_tag in self.proposed_tags:
+            if base_form_with_tag is None:
+                continue
+            base_form = base_form_with_tag.split(":")[0]
+            tag = ":".join(base_form_with_tag.split(":")[1:])
+            proposed_tag = {}
+            proposed_tag["base_form"] = base_form
+            proposed_tag["tag"] = tag
+            token_dict["proposed_tags"].append(proposed_tag)
         return token_dict
