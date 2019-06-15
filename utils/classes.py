@@ -93,7 +93,7 @@ class Token:
             token_str += "{\"tag\": \""
             token_str += "\\\"" if len(str(self.proposed_tags[index])) == 1 and ord(str(self.proposed_tags[index])) == 34 else str(self.proposed_tags[index].split(":")[0])
             token_str += "\","
-            token_str += "\"changed_form\": \""
+            token_str += "\"base_form\": \""
             token_str += str(":".join(self.proposed_tags[index].split(":")[1:]))
             token_str += "\"}"
         token_str += "]}"
