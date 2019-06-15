@@ -32,7 +32,10 @@ def parse_xml(file_path):
                 if element.get('name') == "interps":
                     for subelement in list(element.iter(ns.get('cor') + 'f')):
                         if subelement.get('name') == "base":
-                            interps_base_form = subelement[0].text
+                            if subelement[0].text is not None:
+                                interps_base_form = subelement[0].text
+                            else:
+                                interps_base_form = ""
                         if subelement.get('name') == "ctag":
                             interps_part_of_speech = subelement[0].get('value')
                         if subelement.get('name') == "msd":
@@ -82,7 +85,7 @@ def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_f
     path = directory_path + '*/' + 'ann_morphosyntax.xml'
     xml_files = glob.iglob(path)
     file_path_with_name_and_ext = output_file_path + output_file_name + '.jsonl'
-    with jsonlines.open(file_path_with_name_and_ext, 'a', sort_keys=False) as writer:
+    with jsonlines.open(file_path_with_name_and_ext, mode='a') as writer:
         for xml_file_name in xml_files:
             try:
                 with open(xml_file_name):
@@ -94,8 +97,8 @@ def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_f
 
 
 def main():
-    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_11_str')
-    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_11_dict')
+    write_str_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_str')
+    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_dict')
 
 
 if __name__ == '__main__':
