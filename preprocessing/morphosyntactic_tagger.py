@@ -77,7 +77,8 @@ def write_str_from_xmls_in_directory(directory_path, output_file_path, output_fi
 
 def write_dict_to_jsonl_file(path, file_name, data_dict):
     file_path_with_name_and_ext = path + file_name + '.jsonl'
-    with jsonlines.open(file_path_with_name_and_ext, 'a') as writer:
+    with open(file_path_with_name_and_ext, mode='a') as jsonlines_output_file:
+        writer = jsonlines.Writer(jsonlines_output_file, compact=False, sort_keys=False)
         writer.write(data_dict)
 
 
