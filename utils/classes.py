@@ -6,15 +6,6 @@ class Paragraph:
     def add_sentence(self, sentence):
         self.sentences.append(sentence)
 
-    def create_paragraph_line_string(self):
-        paragraph_str = "{\"sentence\": ["
-        for sentence in self.sentences:
-            if sentence is not self.sentences[0]:
-                paragraph_str += ", "
-            paragraph_str += sentence.create_sentence_line_str()
-        paragraph_str += "]}"
-        return paragraph_str
-
     def create_paragraph_dict(self):
         paragraph_dict = {"sentence": []}
         for sentence in self.sentences:
@@ -29,15 +20,6 @@ class Sentence:
 
     def add_token(self, token):
         self.tokens.append(token)
-
-    def create_sentence_line_str(self):
-        sentence_str = "{\"token\": ["
-        for token in self.tokens:
-            if token is not self.tokens[0]:
-                sentence_str += ", "
-            sentence_str += token.create_token_line_str()
-        sentence_str += "]}"
-        return sentence_str
 
     def create_sentence_dict(self):
         sentence_dict = {"token": []}
@@ -69,35 +51,6 @@ class Token:
 
     def add_proposed_tags(self, proposed_tag):
         self.proposed_tags.append(proposed_tag)
-
-    def create_token_line_str(self):
-        token_str = "{"
-        token_str += "\"changed_form\": \""
-        token_str += "\\\"" if len(self.changed_form) == 1 and ord(self.changed_form) == 34 else self.changed_form
-        token_str += "\", "
-        token_str += "\"base_form\": \""
-        token_str += "\\\"" if len(self.base_form) == 1 and ord(self.base_form) == 34 else self.base_form
-        token_str += "\", "
-        token_str += "\"tag\": \""
-        token_str += self.tag
-        token_str += "\", "
-        token_str += "\"separator\": "
-        token_str += "true" if self.separator else "false"
-        token_str += ", "
-        token_str += "\"proposed_tags\": ["
-        for index in range(0, len(self.proposed_tags)):
-            if index != 0:
-                token_str += ", "
-            if self.proposed_tags[index] is None:
-                continue
-            token_str += "{\"tag\": \""
-            token_str += "\\\"" if len(str(self.proposed_tags[index])) == 1 and ord(str(self.proposed_tags[index])) == 34 else str(self.proposed_tags[index].split(":")[0])
-            token_str += "\","
-            token_str += "\"base_form\": \""
-            token_str += str(":".join(self.proposed_tags[index].split(":")[1:]))
-            token_str += "\"}"
-        token_str += "]}"
-        return token_str
 
     def create_token_dict(self):
         token_dict = {}
