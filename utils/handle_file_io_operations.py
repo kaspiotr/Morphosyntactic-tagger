@@ -19,3 +19,16 @@ def write_dicts_from_xmls_in_directory_to_jsonlines_file(parsing_generator, outp
             except IOError as exec:
                 if exec.errno != errno.EISDIR:
                     raise
+
+
+def fetch_maca_input_from_xml_files_in_directory(parsing_generator, directory_path=nkjp_direcotry_path):
+    path = directory_path + '*/' + 'text.xml'
+    xml_files = glob.iglob(path)
+    for xml_file_name in xml_files:
+        try:
+            with open(xml_file_name):
+                for plain_text in parsing_generator(xml_file_name):
+                    yield plain_text
+        except IOError as exec:
+            if exec.errno != errno.EISDIR:
+                raise
