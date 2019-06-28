@@ -55,13 +55,6 @@ def parse_xml(file_path):
                 element.clear()
 
 
-def write_dict_to_jsonl_file(path, file_name, data_dict):
-    file_path_with_name_and_ext = path + file_name + '.jsonl'
-    with open(file_path_with_name_and_ext, mode='a') as jsonlines_output_file:
-        writer = jsonlines.Writer(jsonlines_output_file, compact=False, sort_keys=False)
-        writer.write(data_dict)
-
-
 def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
     path = directory_path + '*/' + 'ann_morphosyntax.xml'
     xml_files = glob.iglob(path)
