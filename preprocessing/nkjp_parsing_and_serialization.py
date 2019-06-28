@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from utils.classes import Paragraph, Sentence, Token
-from utils.writing_to_jsonlines_file import write_dicts_from_xmls_in_directory_to_jsonlines_file
+from utils.handle_file_io_operations import write_dicts_from_xmls_in_directory_to_jsonlines_file
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
       'nkjp': '{http://www.nkjp.pl/ns/1.0}',
@@ -8,6 +8,19 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 
 def parse_xml(file_path):
+    """Parses xml file
+
+    Parameters
+    ----------
+    file_path : str
+        The file location of the *.xml file to be parsed
+
+    Yields
+    ------
+    Paragraph
+        an object of Paragraph type
+
+    """
     global token, sentence, paragraph, interps_base_form, interps_part_of_speech
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
         if event == "start":
