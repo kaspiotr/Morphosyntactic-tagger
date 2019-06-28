@@ -1,15 +1,10 @@
 import xml.etree.ElementTree as ET
-import glob
-import errno
-import jsonlines
 from utils.classes import Paragraph, Sentence, Token
+from utils.writing_to_jsonlines_file import write_dicts_from_xmls_in_directory_to_jsonlines_file
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
       'nkjp': '{http://www.nkjp.pl/ns/1.0}',
       'xi': '{http://www.w3.org/2001/XInclude}'}
-
-nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
-output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
 
 
 def parse_xml(file_path):
@@ -55,23 +50,8 @@ def parse_xml(file_path):
                 element.clear()
 
 
-def write_dict_from_xmls_in_directory(directory_path, output_file_path, output_file_name):
-    path = directory_path + '*/' + 'ann_morphosyntax.xml'
-    xml_files = glob.iglob(path)
-    file_path_with_name_and_ext = output_file_path + output_file_name + '.jsonl'
-    with jsonlines.open(file_path_with_name_and_ext, mode='a') as writer:
-        for xml_file_name in xml_files:
-            try:
-                with open(xml_file_name):
-                    for next_paragraph in parse_xml(xml_file_name):
-                        writer.write(next_paragraph.create_paragraph_dict())
-            except IOError as exec:
-                if exec.errno != errno.EISDIR:
-                    raise
-
-
 def main():
-    write_dict_from_xmls_in_directory(nkjp_direcotry_path, output_file_path, 'output_dict2')
+    write_dicts_from_xmls_in_directory_to_jsonlines_file(parse_xml, 'output_dict4')
 
 
 if __name__ == '__main__':
