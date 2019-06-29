@@ -13,8 +13,17 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 def parse_maca_input_from_xml_files_in_directory(file_path):
     for event, element in ET.iterparse(file_path, events=("end",)):
-        if element.tag == ns.get('cor') + 'ab':
-            yield element.text
+        if element.tag == ns.get('cor') + 'div':
+            paragraph_text = ""
+            first_subelement = True
+            for subelement in element:
+                if first_subelement:
+                    first_subelement = False
+                else:
+                    paragraph_text += " "
+                print(subelement.tag)
+                paragraph_text += subelement.text
+            yield paragraph_text
 
 
 def create_xml_file_from_maca_output(output_xml_file_path):

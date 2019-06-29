@@ -8,7 +8,7 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 
 def parse_xml(file_path):
-    """Parses xml file
+    """Parses all ann_morphosyntax.xml files from nkjp corpus
 
     Parameters
     ----------
