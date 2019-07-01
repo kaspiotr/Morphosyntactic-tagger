@@ -1,6 +1,7 @@
 import subprocess
 import xml.etree.ElementTree as ET
-from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory
+from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file
+from utils.classes import Paragraph, Sentence, Token
 
 nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
 output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
@@ -21,7 +22,6 @@ def parse_maca_input_from_xml_files_in_directory(file_path):
                     first_subelement = False
                 else:
                     paragraph_text += " "
-                print(subelement.tag)
                 paragraph_text += subelement.text
             yield paragraph_text
 
@@ -30,14 +30,52 @@ def create_xml_file_from_maca_output(output_xml_file_path):
     for maca_input in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
         cmd = maca_input + " | maca-analyse -qs morfeusz2-nkjp -o ccl > " + output_xml_file_path
         subprocess.call("echo " + cmd, shell=True)
-        # cmd2 = maca_input + " | maca-analyse -qs morfeusz2-nkjp -o plain"
-        # subprocess.call("echo " + cmd2, shell=True)
         yield
+
+
+def parse_xml(file_path):
+    """Parses  maca_out.xml file with output generated from maca
+
+    Parameters
+    ----------
+        file_path : str
+            The file location of the *.xml file to be parsed
+
+        Yields
+        ------
+        Paragraph
+            an object of Paragraph type
+
+    """
+    for event, element in ET.iterparse(file_path, events=("start", "end",)):
+        if event == "start":
+            if element.tag == "chunk":
+                paragraph = Paragraph(element.tag)
+            if element.tag == "sentence":
+                sentence = Sentence(element.tag)
+            if element.tag == "tok":
+                token = Token(element.tag)
+        if event == "end":
+            if element.tag == "tok":
+                token.add_changed_form(element[0].text)
+                sentence.add_token(token)
+                for subelement in element:
+                    if subelement.tag == "lex":
+                        interps_base_form = subelement[0].text.split(':')[0]
+                        morph_interp = subelement[1].text
+                        token.add_proposed_tags(interps_base_form + ":" + morph_interp)
+                        token.add_base_form(interps_base_form)
+                        token.add_tag(morph_interp)
+            if element.tag == "sentence":
+                paragraph.add_sentence(sentence)
+            if element.tag == "chunk":
+                yield paragraph
+                element.clear()
 
 
 def main():
     for _ in create_xml_file_from_maca_output(output_maca_xml_file_path):
-        print('plik utworzony')
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(parse_xml, 'output_maca')
 
 
 if __name__ == '__main__':

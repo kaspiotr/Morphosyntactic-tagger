@@ -2,14 +2,15 @@ import glob
 import errno
 import jsonlines
 
-nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
-output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
+nkjp_directory_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
+jsonl_output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
+maca_output_xml_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output/maca_out.xml'
 
 
-def write_dicts_from_xmls_in_directory_to_jsonlines_file(parsing_generator, output_file_name, directory_path=nkjp_direcotry_path, output_file_path_par=output_file_path):
+def write_dicts_from_xmls_in_directory_to_jsonlines_file(parsing_generator, output_file_name, directory_path=nkjp_directory_path, output_file_path=jsonl_output_file_path):
     path = directory_path + '*/' + 'ann_morphosyntax.xml'
     xml_files = glob.iglob(path)
-    file_path_with_name_and_ext = output_file_path_par + output_file_name + '.jsonl'
+    file_path_with_name_and_ext = output_file_path + output_file_name + '.jsonl'
     with jsonlines.open(file_path_with_name_and_ext, mode='a') as writer:
         for xml_file_name in xml_files:
             try:
@@ -21,7 +22,7 @@ def write_dicts_from_xmls_in_directory_to_jsonlines_file(parsing_generator, outp
                     raise
 
 
-def fetch_maca_input_from_xml_files_in_directory(parsing_generator, directory_path=nkjp_direcotry_path):
+def fetch_maca_input_from_xml_files_in_directory(parsing_generator, directory_path=nkjp_directory_path):
     path = directory_path + '*/' + 'text.xml'
     xml_files = glob.iglob(path)
     for xml_file_name in xml_files:
@@ -29,6 +30,18 @@ def fetch_maca_input_from_xml_files_in_directory(parsing_generator, directory_pa
             with open(xml_file_name):
                 for plain_text in parsing_generator(xml_file_name):
                     yield plain_text
+        except IOError as exec:
+            if exec.errno != errno.EISDIR:
+                raise
+
+
+def write_dict_from_xml_with_maca_output_to_jsonlines_file(parsing_generator, output_file_name, input_xml_file_path=maca_output_xml_file_path, output_file_path=jsonl_output_file_path):
+    file_path_with_name_and_ext = output_file_path + output_file_name + '.jsonl'
+    with jsonlines.open(file_path_with_name_and_ext, mode='a') as writer:
+        try:
+            with open(input_xml_file_path):
+                for next_paragraph in parsing_generator(input_xml_file_path):
+                    writer.write(next_paragraph.create_paragraph_dict())
         except IOError as exec:
             if exec.errno != errno.EISDIR:
                 raise
