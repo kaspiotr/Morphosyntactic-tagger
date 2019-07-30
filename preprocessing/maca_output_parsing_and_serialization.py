@@ -1,5 +1,6 @@
-import subprocess
 import xml.etree.ElementTree as ET
+import errno
+from subprocess import Popen, PIPE
 from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file
 from utils.classes import Paragraph, Sentence, Token
 
@@ -26,11 +27,28 @@ def parse_maca_input_from_xml_files_in_directory(file_path):
             yield paragraph_text
 
 
+def _maca(input, output_xml_file_path):
+    cmd = ['maca-analyse', '-qs', 'morfeusz2-nkjp', '-o', 'ccl']
+    p = Popen(cmd, stdout=PIPE, stdin=PIPE, universal_newlines=True)
+    stdout = p.communicate(input=input)[0]
+    try:
+        p.stdin.close()
+    except BrokenPipeError:
+        pass
+    p.wait()
+    if p.returncode != 0:
+        raise Exception('Maca is not working properly')
+    try:
+        with open(output_xml_file_path, mode='w') as writer:
+            writer.write(stdout)
+    except IOError as exec:
+        if exec.errno != errno.EISDIR:
+            raise
+
+
 def create_xml_file_from_maca_output(output_xml_file_path):
     for maca_input in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
-        cmd = maca_input + " | maca-analyse -qs morfeusz2-nkjp -o ccl > " + output_xml_file_path
-        subprocess.call("echo " + cmd, shell=True)
-        yield
+        yield _maca(maca_input, output_xml_file_path)
 
 
 def parse_xml(file_path):
@@ -75,7 +93,7 @@ def parse_xml(file_path):
 
 def main():
     for _ in create_xml_file_from_maca_output(output_maca_xml_file_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(parse_xml, 'output_maca')
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(parse_xml, 'output_maca_ver2')
 
 
 if __name__ == '__main__':
