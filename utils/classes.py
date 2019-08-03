@@ -6,8 +6,8 @@ class Paragraph:
     def add_sentence(self, sentence):
         self.sentences.append(sentence)
 
-    def create_paragraph_dict(self):
-        paragraph_dict = {"sentence": []}
+    def create_paragraph_dict(self, paragraph_id):
+        paragraph_dict = {"id": paragraph_id, "sentence": []}
         for sentence in self.sentences:
             paragraph_dict["sentence"].append(sentence.create_sentence_dict())
         return paragraph_dict

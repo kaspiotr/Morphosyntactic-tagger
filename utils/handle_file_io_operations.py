@@ -15,8 +15,11 @@ def write_dicts_from_xmls_in_directory_to_jsonlines_file(parsing_generator, outp
         for xml_file_name in xml_files:
             try:
                 with open(xml_file_name):
+                    idx = 1
+                    directory_id = xml_file_name.split('/')[-2]
                     for next_paragraph in parsing_generator(xml_file_name):
-                        writer.write(next_paragraph.create_paragraph_dict())
+                        writer.write(next_paragraph.create_paragraph_dict(directory_id + '-' + str(idx)))
+                        idx += 1
             except IOError as exec:
                 if exec.errno != errno.EISDIR:
                     raise
