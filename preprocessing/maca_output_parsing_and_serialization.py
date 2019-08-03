@@ -47,8 +47,9 @@ def _maca(input, output_xml_file_path):
 
 
 def create_xml_file_from_maca_output(output_xml_file_path):
-    for maca_input in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
-        yield _maca(maca_input, output_xml_file_path)
+    for (maca_input, nkjp_directory_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
+        _maca(maca_input, output_xml_file_path)
+        yield nkjp_directory_id
 
 
 def parse_xml(file_path):
@@ -92,8 +93,8 @@ def parse_xml(file_path):
 
 
 def main():
-    for _ in create_xml_file_from_maca_output(output_maca_xml_file_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(parse_xml, 'output_maca ')
+    for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path):
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'output_maca')
 
 
 if __name__ == '__main__':
