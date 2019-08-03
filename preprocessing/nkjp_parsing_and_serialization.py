@@ -64,7 +64,7 @@ def parse_xml(file_path):
 
 
 def main():
-    write_dicts_from_xmls_in_directory_to_jsonlines_file(parse_xml, 'output_nkjp_ver2')
+    write_dicts_from_xmls_in_directory_to_jsonlines_file(parse_xml, 'output_nkjp')
 
 
 if __name__ == '__main__':
