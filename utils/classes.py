@@ -7,9 +7,9 @@ class Paragraph:
         self.sentences.append(sentence)
 
     def create_paragraph_dict(self, paragraph_id):
-        paragraph_dict = {"id": paragraph_id, "sentence": [], "match": False}
+        paragraph_dict = {"id": paragraph_id, "sentences": []}
         for sentence in self.sentences:
-            paragraph_dict["sentence"].append(sentence.create_sentence_dict())
+            paragraph_dict["sentences"].append(sentence.create_sentence_dict())
         return paragraph_dict
 
 
@@ -22,9 +22,9 @@ class Sentence:
         self.tokens.append(token)
 
     def create_sentence_dict(self):
-        sentence_dict = {"token": []}
+        sentence_dict = {"sentence": [], "match": False}
         for token in self.tokens:
-            sentence_dict["token"].append(token.create_token_dict())
+            sentence_dict["sentence"].append(token.create_token_dict())
         return sentence_dict
 
 
@@ -53,12 +53,8 @@ class Token:
         self.proposed_tags.append(proposed_tag)
 
     def create_token_dict(self):
-        token_dict = {}
-        token_dict["changed_form"] = self.changed_form
-        token_dict["base_form"] = self.base_form
-        token_dict["tag"] = self.tag
-        token_dict["separator"] = self.separator
-        token_dict["proposed_tags"] = []
+        token_dict = {"token": {"changed_form": self.changed_form, "base_form": self.base_form, "tag": self.tag,
+                      "separator": self.separator, "proposed_tags": []}}
         for base_form_with_tag in self.proposed_tags:
             if base_form_with_tag is None:
                 continue
@@ -67,5 +63,5 @@ class Token:
             proposed_tag = {}
             proposed_tag["base_form"] = base_form
             proposed_tag["tag"] = tag
-            token_dict["proposed_tags"].append(proposed_tag)
+            token_dict["token"]["proposed_tags"].append(proposed_tag)
         return token_dict
