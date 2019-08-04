@@ -94,7 +94,7 @@ def parse_xml(file_path):
 
 def main():
     for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'output_maca')
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output')
 
 
 if __name__ == '__main__':
