@@ -82,6 +82,8 @@ def parse_xml(file_path):
                     if subelement.tag == "lex":
                         interps_base_form = subelement[0].text.split(':')[0]
                         morph_interp = subelement[1].text
+                        if morph_interp == "interp":
+                            token.add_separator(True)
                         token.add_proposed_tags(interps_base_form + ":" + morph_interp)
                         token.add_base_form(interps_base_form)
                         token.add_tag(morph_interp)
