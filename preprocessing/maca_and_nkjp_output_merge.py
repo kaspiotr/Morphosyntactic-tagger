@@ -3,8 +3,8 @@ import os
 import json
 from utils.handle_file_io_operations import append_token
 
-maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl'
-maca_output_marked_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp_marked.jsonl'
+maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
+maca_output_marked_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
 nkjp_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
 id2pos_in_nkjp_file = {}
 id2pos_in_maca_file = {}
@@ -67,7 +67,7 @@ def populate_buffers():
             print("NKJP list length: %s" % len(nkjp_paragraph_buffer))
             paragraph_no += 1
             align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer)
-            maca_writer.write(maca_json) ## <- tu trzeba uzupelnic argument (linie/json), ktora bedzie zwracana przez funkcje align
+            maca_writer.write(maca_json)
 
 
 def align(maca_json, nkjp_buffer, maca_buffer):
@@ -75,7 +75,6 @@ def align(maca_json, nkjp_buffer, maca_buffer):
     maca_paragraph_str = ""
     prev_maca_token = None
     curr_maca_token = None
-    # sentences_no_in_maca_paragraph = len(maca_json['sentences'])
     sentence_no = 0
     while nkjp_buffer or maca_buffer:
         if len(nkjp_paragraph_str) == len(maca_paragraph_str):
@@ -84,7 +83,7 @@ def align(maca_json, nkjp_buffer, maca_buffer):
                 break
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
-            if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]: # token from another sentece
+            if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
                 maca_json['sentences'][sentence_no]['match'] = True
                 sentence_no += 1
             nkjp_paragraph_str = append_token(nkjp_paragraph_str, nkjp_buffer.pop(0))
@@ -98,12 +97,12 @@ def align(maca_json, nkjp_buffer, maca_buffer):
                 break
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
-            if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]: # token from another sentece
+            if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
                 maca_json['sentences'][sentence_no]['match'] = True
                 sentence_no += 1
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
 
-    if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:  # token from another sentece
+    if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
         maca_json['sentences'][sentence_no]['match'] = True
 
 
