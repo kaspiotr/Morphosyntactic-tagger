@@ -1,9 +1,10 @@
 import jsonlines
 import os
 import json
+from utils.handle_file_io_operations import append_token
 
-maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
-maca_output_marked_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_marked.jsonl'
+maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl'
+maca_output_marked_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp_marked.jsonl'
 nkjp_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
 id2pos_in_nkjp_file = {}
 id2pos_in_maca_file = {}
@@ -40,8 +41,7 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp():
             for _ in nkjp_json['sentences']:
                 nkjp_sentences_no += 1
             if maca_sentences_no != nkjp_sentences_no:
-                print("Paragraph no.: %d, sentences no.: maca: %d, nkjp: %d" % (
-                nkjp_paragraph_no, maca_sentences_no, nkjp_sentences_no))
+                print("Paragraph no.: %d, sentences no.: maca: %d, nkjp: %d" % (nkjp_paragraph_no, maca_sentences_no, nkjp_sentences_no))
             maca_sentences_no = 0
             nkjp_sentences_no = 0
 
@@ -107,14 +107,9 @@ def align(maca_json, nkjp_buffer, maca_buffer):
         maca_json['sentences'][sentence_no]['match'] = True
 
 
-def append_token(paragraph_str, token):
-    paragraph_str += token['changed_form'] if token['separator'] else ' ' + token['changed_form']
-    return paragraph_str
-
-
 def main():
     populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file, id2pos_in_maca_file)
-    # print_paragraphs_with_different_sentence_no_between_maca_and_nkjp()
+    print_paragraphs_with_different_sentence_no_between_maca_and_nkjp()
     populate_buffers()
 
 

@@ -1,12 +1,13 @@
 import xml.etree.ElementTree as ET
 import errno
 from subprocess import Popen, PIPE
-from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file
+from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file, serialize_maca_input_from_nkjp_jsonl
 from utils.classes import Paragraph, Sentence, Token
 
 nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
 output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
 output_maca_xml_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output/maca_out.xml'
+nkjp_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
 
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
@@ -46,10 +47,15 @@ def _maca(input, output_xml_file_path):
             raise
 
 
-def create_xml_file_from_maca_output(output_xml_file_path):
-    for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
-        _maca(maca_input, output_xml_file_path)
-        yield nkjp_directory_id_with_paragraph_id
+def create_xml_file_from_maca_output(output_xml_file_path, jsonl_file_path=nkjp_jsonl_file_path, serialize_from_nkjp_jsonl=False):
+    if serialize_from_nkjp_jsonl:
+        for (maca_input, nkjp_directory_id_with_paragraph_id) in serialize_maca_input_from_nkjp_jsonl(jsonl_file_path):
+            _maca(maca_input, output_xml_file_path)
+            yield nkjp_directory_id_with_paragraph_id
+    else:
+        for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
+            _maca(maca_input, output_xml_file_path)
+            yield nkjp_directory_id_with_paragraph_id
 
 
 def parse_xml(file_path):
@@ -95,8 +101,10 @@ def parse_xml(file_path):
 
 
 def main():
-    for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output')
+    # for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path, nkjp_jsonl_file_path):
+    #     write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output')
+    for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path, nkjp_jsonl_file_path, True):
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output_serialized_from_nkjp')
 
 
 if __name__ == '__main__':
