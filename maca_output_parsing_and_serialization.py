@@ -1,13 +1,10 @@
-import xml.etree.ElementTree as ET
+import argparse
 import errno
+import os
+import xml.etree.ElementTree as ET
 from subprocess import Popen, PIPE
-from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file, serialize_maca_input_from_nkjp_jsonl
 from utils.classes import Paragraph, Sentence, Token
-
-nkjp_direcotry_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/NKJP-PodkorpusMilionowy-1.2/'
-output_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/'
-output_maca_xml_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output/maca_out.xml'
-nkjp_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
+from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file, serialize_maca_input_from_nkjp_jsonl
 
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
@@ -47,29 +44,55 @@ def _maca(input, output_xml_file_path):
             raise
 
 
-def create_xml_file_from_maca_output(output_xml_file_path, jsonl_file_path=nkjp_jsonl_file_path, serialize_from_nkjp_jsonl=False):
+def create_xml_file_from_maca_output(jsonl_file_path, nkjp_dir_path, serialize_from_nkjp_jsonl=False):
+    """
+    Runs MACA analyzer on a given chunk of plain text and saves it in the maca_out.xml file in resource/maca_output/
+    directory of this project
+
+    Parameters
+    ----------
+    :param jsonl_file_path:
+    nkjp_dir_path : str
+        The absolute path to the directory with NKJP corpora.
+    :param serialize_from_nkjp_jsonl:
+
+    Yields
+    ------
+    String
+
+    :return:
+    """
+    output_xml_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output/maca_out.xml'
     if serialize_from_nkjp_jsonl:
         for (maca_input, nkjp_directory_id_with_paragraph_id) in serialize_maca_input_from_nkjp_jsonl(jsonl_file_path):
             _maca(maca_input, output_xml_file_path)
             yield nkjp_directory_id_with_paragraph_id
     else:
-        for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory):
+        if nkjp_dir_path == '/resources/NKJP-PodkorpusMilionowy-1.2/':
+            my_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + nkjp_dir_path
+        else:
+            my_path = nkjp_dir_path
+        if 'NKJP-PodkorpusMilionowy-1.2' not in os.listdir('/'.join(my_path.split('/')[:-2])):
+            raise IOError(
+                "Contents of directory named NKJP-PodkorpusMilionowy-1.2 not found in the specified location.")
+        for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory, my_path):
             _maca(maca_input, output_xml_file_path)
             yield nkjp_directory_id_with_paragraph_id
 
 
 def parse_xml(file_path):
-    """Parses  maca_out.xml file with output generated from maca
+    """
+    Parses maca_out.xml file with output gained from MACA analyzer
 
     Parameters
     ----------
-        file_path : str
-            The file location of the *.xml file to be parsed
+    file_path : str
+        The file location of the *.xml file to be parsed.
 
-        Yields
-        ------
-        Paragraph
-            an object of Paragraph type
+    Yields
+    ------
+    Paragraph
+        An object of Paragraph type.
 
     """
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
@@ -101,10 +124,18 @@ def parse_xml(file_path):
 
 
 def main():
-    for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path, nkjp_jsonl_file_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output')
-    for paragraph_id in create_xml_file_from_maca_output(output_maca_xml_file_path, nkjp_jsonl_file_path, True):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, 'maca_output_serialized_from_nkjp')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("NKJP_file_path", help="The path to the *.jsonl file where data serialized from NKJP corpora are stored.", type=str)
+    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved.", type=str)
+    parser.add_argument("MACA_serialized_file", help="The absolute path to the *.jsonl file where data serialized from file given by argument NKJP_file_path will be saved.", type=str)
+    parser.add_argument("-NKJP_dir_path", help="The absolute path to the directory with NKJP corpora.",
+                        default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
+    args = parser.parse_args()
+
+    for paragraph_id in create_xml_file_from_maca_output(args.NKJP_file_path, args.NKJP_dir_path):
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, args.MACA_file)
+    for paragraph_id in create_xml_file_from_maca_output(args.NKJP_file_path, args.NKJP_dir_path, True):
+        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, args.MACA_serialized_file)
 
 
 if __name__ == '__main__':

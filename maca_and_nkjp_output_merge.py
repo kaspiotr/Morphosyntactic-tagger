@@ -1,16 +1,14 @@
+import argparse
 import jsonlines
 import os
 import json
 from utils.handle_file_io_operations import append_token
 
-maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
-maca_output_marked_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
-nkjp_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
 id2pos_in_nkjp_file = {}
 id2pos_in_maca_file = {}
 
 
-def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_file_dict):
+def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_file_dict, nkjp_output_jsonl_file_path, maca_output_jsonl_file_path):
     with open(nkjp_output_jsonl_file_path, mode='rb') as nkjp_fh, \
             jsonlines.open(nkjp_output_jsonl_file_path) as nkjp_reader:
         for nkjp_json in nkjp_reader:
@@ -23,7 +21,7 @@ def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_
             maca_fh.readline()
 
 
-def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp():
+def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_output_jsonl_file_path, maca_output_jsonl_file_path):
     with open(nkjp_output_jsonl_file_path, mode='rb') as nkjp_fh, \
             jsonlines.open(maca_output_jsonl_file_path) as maca_reader:
         print("Differences between maca and nkjp jsons:")
@@ -46,7 +44,7 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp():
             nkjp_sentences_no = 0
 
 
-def populate_buffers():
+def populate_buffers(nkjp_output_jsonl_file_path, maca_output_jsonl_file_path, maca_output_marked_jsonl_file_path):
     with open(nkjp_output_jsonl_file_path, mode='rb') as nkjp_fh, \
             jsonlines.open(maca_output_jsonl_file_path) as maca_reader, \
             jsonlines.open(maca_output_marked_jsonl_file_path, mode='w') as maca_writer:
@@ -107,9 +105,15 @@ def align(maca_json, nkjp_buffer, maca_buffer):
 
 
 def main():
-    populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file, id2pos_in_maca_file)
-    print_paragraphs_with_different_sentence_no_between_maca_and_nkjp()
-    populate_buffers()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("NKJP_file", help="The absolute path to the *.jsonl file where data serialized from NKJP corpora are stored.", type=str)
+    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data serialized from MACA output are stored.", type=str)
+    parser.add_argument("MACA_marked_file", help="The absolute path to the file *.jsonl where similarities between NKJP and MACA will be marked", type=str)
+
+    args = parser.parse_args()
+    populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file, id2pos_in_maca_file, args.NKJP_file, args.MACA_file)
+    print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(args.NKJP_file, args.MACA_file)
+    populate_buffers(args.NKJP_file, args.MACA_file, args.MACA_marked_file)
 
 
 if __name__ == '__main__':
