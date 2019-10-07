@@ -12,6 +12,18 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 
 def parse_maca_input_from_xml_files_in_directory(file_path):
+    """
+    Parses all text.xml files from NKJP corpora directory
+
+    Parameters
+    ----------
+    file_path: str
+        The absolute path to the directory with NKJP corpora.
+
+    Yields
+    ------
+    Plain text with NKJP corpora paragraph
+    """
     for event, element in ET.iterparse(file_path, events=("end",)):
         if element.tag == ns.get('cor') + 'div':
             paragraph_text = ""
@@ -26,6 +38,22 @@ def parse_maca_input_from_xml_files_in_directory(file_path):
 
 
 def _maca(input, output_xml_file_path):
+    """
+    Runs MACA analizer on a given by input parameter chunk of text and writes result to the file given by the output_xml_file_path parameter
+
+    Parameters
+    ----------
+    input: str
+        Plain text that is an input to the MACA analyzer
+    output_xml_file_path: str
+        The absolute path to the *.jsonl file where output from MAC analyzer is going to be written
+
+    Raises
+    ------
+    Exception('Maca is not working properly')
+    IOError
+        If file maca_out.xml is not found
+    """
     cmd = ['maca-analyse', '-qs', 'morfeusz2-nkjp', '-o', 'ccl']
     p = Popen(cmd, stdout=PIPE, stdin=PIPE, universal_newlines=True)
     stdout = p.communicate(input=input)[0]
@@ -51,7 +79,8 @@ def create_xml_file_from_maca_output(jsonl_file_path, nkjp_dir_path, serialize_f
 
     Parameters
     ----------
-    :param jsonl_file_path:
+    jsonl_file_path: str
+        The path to the *.jsonl file where data serialized from NKJP corpora are stored.
     nkjp_dir_path : str
         The absolute path to the directory with NKJP corpora.
     :param serialize_from_nkjp_jsonl:
@@ -64,6 +93,8 @@ def create_xml_file_from_maca_output(jsonl_file_path, nkjp_dir_path, serialize_f
     """
     output_xml_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output/maca_out.xml'
     if serialize_from_nkjp_jsonl:
+        if jsonl_file_path is None:
+            jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/nkjp_output.jsonl'
         for (maca_input, nkjp_directory_id_with_paragraph_id) in serialize_maca_input_from_nkjp_jsonl(jsonl_file_path):
             _maca(maca_input, output_xml_file_path)
             yield nkjp_directory_id_with_paragraph_id
@@ -125,9 +156,9 @@ def parse_xml(file_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("NKJP_file_path", help="The path to the *.jsonl file where data serialized from NKJP corpora are stored.", type=str)
-    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved.", type=str)
+    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved or just the name of that file.", type=str)
     parser.add_argument("MACA_serialized_file", help="The absolute path to the *.jsonl file where data serialized from file given by argument NKJP_file_path will be saved.", type=str)
+    parser.add_argument("-NKJP_file_path", help="The path to the *.jsonl file where data serialized from NKJP corpora are stored.", type=str)
     parser.add_argument("-NKJP_dir_path", help="The absolute path to the directory with NKJP corpora.",
                         default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
     args = parser.parse_args()

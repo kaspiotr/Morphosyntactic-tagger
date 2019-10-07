@@ -9,7 +9,7 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 
 def parse_xml(file_path):
-    """Parses all ann_morphosyntax.xml files from nkjp corpus
+    """Parses all ann_morphosyntax.xml files from NKJP corpora
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def parse_xml(file_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", help="The absolute path with name of the saved *jsonl file.", type=str)
+    parser.add_argument("file_path", help="The absolute path with name of the saved *jsonl file or just the name of that file.", type=str)
     parser.add_argument("-NKJP_dir_path", help="The absolute path to the directory with NKJP corpora.",
                         default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
     args = parser.parse_args()
