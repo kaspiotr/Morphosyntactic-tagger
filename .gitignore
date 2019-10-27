@@ -112,3 +112,7 @@ venv.bak/
 
 # scripts arguments
 scripts_arguments.txt
+
+# output directory
+output/
+
