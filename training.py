@@ -264,7 +264,37 @@ def map_second_section_of_nkjp_numbers_indices(text_id, text_category):
         return text_category + "_D_Lewandowska_PHD_Thesis"  # Doktorat Doroty Lewandowskiej (gotowe próbki prasowe)
 
 
-def create_train_and_test_files(maca_output_serialized_from_nkjp_marked_file):
+def write_to_file(file_name, content):
+    os.makedirs(os.path.dirname(file_name), exist_ok=True)
+    try:
+        with open(file_name, mode='a') as writer:
+            writer.write(content)
+    except IOError as exec:
+        if exec.errno != errno.EISDIR:
+            raise
+
+
+def _get_proposed_tag_str(proposed_tag):
+    return proposed_tag["tag"]
+
+
+def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, is_test_set=True):
+    for paragraph_json_idx in paragraphs_indexes:
+        for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
+            if is_test_set or sentence["match"]:
+                for token in sentence["sentence"]:
+                    token_json = token["token"]
+                    write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["tag"]
+                                  + " " + str(token_json["separator"]) + " "
+                                  + ";".join(map(lambda proposed_tag: proposed_tag["tag"], token_json["proposed_tags"]))
+                                  + "\n")
+
+
+def train(jsonl_file):
+    maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/resources/' + jsonl_file + '.jsonl'
+    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
+    train_file_name = data_folder + "/train"
+    test_file_name = data_folder + "/test"
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
         text_category_to_number_of_elements = {}
         paragraphs_X = []
@@ -280,50 +310,25 @@ def create_train_and_test_files(maca_output_serialized_from_nkjp_marked_file):
         for text_cat, els_no in text_category_to_number_of_elements.items():
             print("%-50s%s" % (text_cat, els_no))
         for train_index, test_index in skf.split(X, y):
+            _write_paragraph_to_file(X, train_index, train_file_name, False)
+            _write_paragraph_to_file(X, test_index, test_file_name)
+            # define columns
+            columns = {0: 'text', 1: 'pos'}
+            # this is the folder in which train, test and dev files reside
+            # data_folder = os.path.dirname(os.path.abspath(__file__)) + '/testdata'  # for tests
+            # init a corpus using column format, data folder and the names of the train, dev and test files
+            corpus: Corpus = ColumnCorpus(data_folder, columns,
+                                          train_file='train',
+                                          test_file='test',
+                                          dev_file=None)
+            len(corpus.train)
+            print(corpus.train[0].to_tagged_string('pos'))
+            # --------------------------
             print("TRAIN:", train_index, "TEST:", test_index)
-# TODO
-# dopisac tworzenie pliku txt dev, train i test
-# dorzucic tworzenie w nich dwoch kolumn ze zdaniem i tagiem
-# z jednego paragrafu
-
-
-def write_to_file(file_name, input):
-    os.makedirs(os.path.dirname(file_name), exist_ok=True)
-    try:
-        with open(file_name, mode='a') as writer:
-            writer.write(input)
-    except IOError as exec:
-        if exec.errno != errno.EISDIR:
-            raise
-
-
-def split_paragraphs_into_train_and_test_files(data_folder_path):
-    train_file_name = data_folder_path + "/train"
-    write_to_file(train_file_name, "czesc train")
-    test_file_name = data_folder_path + "/test"
-    write_to_file(test_file_name, "czesc test")
-
-
-def read_custom_sequence_labelling_dataset(jsonl_file):
-    jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/' + jsonl_file + '.jsonl'
-    create_train_and_test_files(jsonl_file_path)
-    # define columns
-    columns = {0: 'text', 1: 'pos'}
-    # this is the folder in which train, test and dev files reside
-    # data_folder = os.path.dirname(os.path.abspath(__file__)) + '/testdata'  # for tests
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
-    split_paragraphs_into_train_and_test_files(data_folder)
-    # init a corpus using column format, data folder and the names of the train, dev and test files
-    corpus: Corpus = ColumnCorpus(data_folder, columns,
-                                  train_file='train',
-                                  test_file='test',
-                                  dev_file=None)
-    len(corpus.train)
-    print(corpus.train[0].to_tagged_string('pos'))
 
 
 def main():
-    read_custom_sequence_labelling_dataset('maca_output_serialized_from_nkjp_marked')
+    train('maca_output_serialized_from_nkjp_marked')
 
 
 if __name__ == '__main__':
