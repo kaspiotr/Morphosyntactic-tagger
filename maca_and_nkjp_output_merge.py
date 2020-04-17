@@ -156,6 +156,7 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no):
     :return: int
         matching_sentences_no enlarged by number of matching sentences in paragraphs that are given in maca_json json
     """
+    was_sentence_counted_as_matching = False
     nkjp_paragraph_str = ""
     maca_paragraph_str = ""
     prev_maca_token = None
@@ -190,10 +191,17 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no):
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
     if nkjp_paragraph_str == maca_paragraph_str:
         maca_json['sentences'][-1]['match'] = True
-        matching_sentences_no += 1
+        if not was_sentence_counted_as_matching:
+            matching_sentences_no += 1
+            was_sentence_counted_as_matching = True
+        else:
+            log.info("Sentence with id %s was counted already!" % maca_json['sentences'][sentence_no]['id'])
     if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
         maca_json['sentences'][sentence_no]['match'] = True
-        matching_sentences_no += 1
+        if not was_sentence_counted_as_matching:
+            matching_sentences_no += 1
+        else:
+            log.info("Sentence with id %s was counted already!" % maca_json['sentences'][sentence_no]['id'])
     for sentence in maca_json['sentences']:
         if not sentence['match']:
             log.info("Id of sentence that does not match: " + sentence['id'])
