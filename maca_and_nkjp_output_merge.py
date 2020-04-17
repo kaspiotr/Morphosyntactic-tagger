@@ -1,7 +1,8 @@
 import argparse
-import jsonlines
-import os
 import json
+import jsonlines
+import logging as log
+import os
 from utils.handle_file_io_operations import append_token
 
 id2pos_in_nkjp_file = {}
@@ -31,7 +32,7 @@ def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_
             id2pos_in_nkjp_file_dict[nkjp_json['id']] = {"first_byte_pos": nkjp_fh.tell()}
             nkjp_fh.readline()
     if maca_output_jsonl_file_path is None:
-        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output.jsonl'
+        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output_serialized_from_nkjp.jsonl'
     with open(maca_output_jsonl_file_path, mode='rb') as maca_fh, \
             jsonlines.open(maca_output_jsonl_file_path) as maca_reader:
         for maca_json in maca_reader:
@@ -50,13 +51,14 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_outpu
     maca_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from MACA output are stored.
     """
+    log.basicConfig(filename='resources/tagging_diffs.log', format='%(levelname)s:%(message)s', level=log.INFO)
     if nkjp_output_jsonl_file_path is None:
         nkjp_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/nkjp_output.jsonl'
     if maca_output_jsonl_file_path is None:
-        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output.jsonl'
+        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output_serialized_from_nkjp.jsonl'
     with open(nkjp_output_jsonl_file_path, mode='rb') as nkjp_fh, \
             jsonlines.open(maca_output_jsonl_file_path) as maca_reader:
-        print("Differences between maca and nkjp jsons:")
+        log.info("Differences between maca and nkjp jsons:")
         maca_sentences_no = 0
         maca_paragraph_no = 0
         nkjp_sentences_no = 0
@@ -71,7 +73,7 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_outpu
             for _ in nkjp_json['sentences']:
                 nkjp_sentences_no += 1
             if maca_sentences_no != nkjp_sentences_no:
-                print("Paragraph no.: %d, sentences no.: maca: %d, nkjp: %d" % (nkjp_paragraph_no, maca_sentences_no, nkjp_sentences_no))
+                log.info("Paragraph (id = %s) no.: %d, sentences no.: maca: %d, nkjp: %d" % (maca_json['id'], nkjp_paragraph_no, maca_sentences_no, nkjp_sentences_no))
             maca_sentences_no = 0
             nkjp_sentences_no = 0
 
@@ -89,13 +91,16 @@ def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_
     maca_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from MACA output are stored.
     """
+    total_maca_sentences_no = 0
+    total_nkjp_sentences_no = 0
+    matching_sentences_no = 0
     if len(maca_output_marked_jsonl_file_path.split('/')) == 1:
         maca_output_marked_jsonl_file_path = os.path.abspath(
             os.path.dirname(os.path.abspath(__file__))) + '/output/' + maca_output_marked_jsonl_file_path
     if nkjp_output_jsonl_file_path is None:
         nkjp_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/nkjp_output.jsonl'
     if maca_output_jsonl_file_path is None:
-        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output.jsonl'
+        maca_output_jsonl_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output_serialized_from_nkjp.jsonl'
     with open(nkjp_output_jsonl_file_path, mode='rb') as nkjp_fh, \
             jsonlines.open(maca_output_jsonl_file_path) as maca_reader, \
             jsonlines.open(maca_output_marked_jsonl_file_path + '.jsonl', mode='w') as maca_writer:
@@ -108,20 +113,28 @@ def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_
             for maca_sentences in maca_json['sentences']:
                 for maca_sentence in maca_sentences['sentence']:
                     maca_paragraph_buffer.append(maca_sentence['token'])
+                    total_maca_sentences_no += 1
             for nkjp_sentences in nkjp_json['sentences']:
                 for nkjp_sentence in nkjp_sentences['sentence']:
                     nkjp_paragraph_buffer.append(nkjp_sentence['token'])
-            print("Paragraph no.: %d" % paragraph_no)
-            print("Maca list length: %s" % len(maca_paragraph_buffer))
-            print("NKJP list length: %s" % len(nkjp_paragraph_buffer))
+                    total_nkjp_sentences_no += 1
+            if len(maca_paragraph_buffer) != len(nkjp_paragraph_buffer):
+                log.info("Paragraph no.: %d and id: %s" % (paragraph_no, maca_json['id']))
+                log.info("Maca list length: %s" % len(maca_paragraph_buffer))
+                log.info("NKJP list length: %s" % len(nkjp_paragraph_buffer))
             paragraph_no += 1
-            align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer)
+            matching_sentences_no += align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer)
             maca_writer.write(maca_json)
+    log.info("Total MACA sentences no.: %s" % total_maca_sentences_no)
+    log.info("Total NKJP sentences no.: %s" % total_nkjp_sentences_no)
+    log.info("Number of sentences that match between NKJP and MACA: %s" % matching_sentences_no)
 
 
 def align(maca_json, nkjp_buffer, maca_buffer):
     """
     Align algorithm that marks similarities between NKJP and MACA analyzer output POS tagging
+    This method also logs information about differences between NKJP and MACA in a file tagging_diffs.log in resources
+    directory of the project.
     maca_json: json file
         The file of *.json type where algorithm marks if there is similarity or not in POS tagging between NKJP and MACA analyzer
     nkjp_buffer: list of str
@@ -129,6 +142,7 @@ def align(maca_json, nkjp_buffer, maca_buffer):
     maca_buffer: list of str
         The buffer with paragprahs of NKJP corpora returned by MACA analyzer in form of a list of strings
     """
+    matching_sentences_no = 0
     nkjp_paragraph_str = ""
     maca_paragraph_str = ""
     prev_maca_token = None
@@ -137,12 +151,13 @@ def align(maca_json, nkjp_buffer, maca_buffer):
     while nkjp_buffer or maca_buffer:
         if len(nkjp_paragraph_str) == len(maca_paragraph_str):
             if nkjp_paragraph_str != maca_paragraph_str:
-                print("Alignment error")
+                log.info("Alignment error")
                 break
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
             if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
                 maca_json['sentences'][sentence_no]['match'] = True
+                matching_sentences_no += 1
                 sentence_no += 1
             nkjp_paragraph_str = append_token(nkjp_paragraph_str, nkjp_buffer.pop(0))
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
@@ -157,11 +172,19 @@ def align(maca_json, nkjp_buffer, maca_buffer):
             curr_maca_token = maca_buffer.pop(0)
             if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
                 maca_json['sentences'][sentence_no]['match'] = True
+                matching_sentences_no += 1
                 sentence_no += 1
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
-
+    if nkjp_paragraph_str == maca_paragraph_str:
+        maca_json['sentences'][-1]['match'] = True
+        matching_sentences_no += 1
     if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
         maca_json['sentences'][sentence_no]['match'] = True
+        matching_sentences_no += 1
+    for sentence in maca_json['sentences']:
+        if not sentence['match']:
+            log.info("Id of sentence that does not match: " + sentence['id'])
+    return matching_sentences_no
 
 
 def main():

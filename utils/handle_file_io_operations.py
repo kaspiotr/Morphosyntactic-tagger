@@ -134,6 +134,7 @@ def write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parsing
 def append_token(paragraph_str, token):
     """
     Appends token with or without space to the paragraph string
+    If token contains no-break spaces (U+00A0) they will be replaced with spaces (U+0020)
 
     Parameters
     ----------
@@ -146,5 +147,6 @@ def append_token(paragraph_str, token):
     -------
     Paragraph text in a from of a string
     """
-    paragraph_str += token['changed_form'] if token['separator'] else ' ' + token['changed_form']
+    token['changed_form'] = str(token['changed_form']).replace("\u00A0", " ")
+    paragraph_str += ' ' + token['changed_form'] if token['separator'] else token['changed_form']
     return paragraph_str

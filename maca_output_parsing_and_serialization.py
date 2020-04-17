@@ -126,6 +126,7 @@ def parse_xml(file_path):
         An object of Paragraph type.
 
     """
+    is_prev_el_tag_ns = False
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
         if event == "start":
             if element.tag == "chunk":
@@ -134,6 +135,11 @@ def parse_xml(file_path):
                 sentence = Sentence(element.tag)
             if element.tag == "tok":
                 token = Token(element.tag)
+                if is_prev_el_tag_ns:
+                    token.add_separator(False)
+                    is_prev_el_tag_ns = False
+            if element.tag == "ns":
+                is_prev_el_tag_ns = True
         if event == "end":
             if element.tag == "tok":
                 token.add_changed_form(element[0].text)
@@ -142,8 +148,6 @@ def parse_xml(file_path):
                     if subelement.tag == "lex":
                         interps_base_form = subelement[0].text.split(':')[0]
                         morph_interp = subelement[1].text
-                        if morph_interp == "interp":
-                            token.add_separator(True)
                         token.add_proposed_tags(interps_base_form + ":" + morph_interp)
                         token.add_base_form(interps_base_form)
                         token.add_tag(morph_interp)

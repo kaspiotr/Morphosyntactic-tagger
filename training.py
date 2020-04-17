@@ -287,19 +287,26 @@ def _get_proposed_tag_str(proposed_tag):
 
 
 def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, is_test_set=True):
+    sentences_no = 0
+    sentences_that_match_no = 0
     for paragraph_json_idx in paragraphs_indexes:
         for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
+            sentences_no += 1
             if is_test_set or sentence["match"]:
+                sentences_that_match_no += 1
                 for token in sentence["sentence"]:
                     token_json = token["token"]
                     write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["tag"]
                                   + " " + str(token_json["separator"]) + " "
                                   + ";".join(map(lambda proposed_tag: proposed_tag["tag"], token_json["proposed_tags"]))
                                   + "\n")
+                write_to_file(destination_file_name, "\n")
+    print("Calkowita liczba zdan w korpusie: %s " % sentences_no)
+    print("Liczba zdan otagowanych tak samo w NKJP i MACA: %s " % sentences_that_match_no)
 
 
 def train(jsonl_file):
-    maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/resources/' + jsonl_file + '.jsonl'
+    maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + jsonl_file + '.jsonl'
     # this is the folder in which train and test files reside
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
     train_file_name = data_folder + "/train"
@@ -322,7 +329,7 @@ def train(jsonl_file):
             _write_paragraph_to_file(X, train_index, train_file_name, False)
             _write_paragraph_to_file(X, test_index, test_file_name)
             # define columns
-            columns = {0: 'text', 1: 'pos'}
+            columns = {0: 'text', 1: 'pos'}  # dodoc: , 3: 'is_separator'
             # init a corpus using column format, data folder and the names of the train and test files
             # 1. get the corpus
             corpus: Corpus = ColumnCorpus(data_folder, columns,
@@ -348,8 +355,8 @@ def train(jsonl_file):
                 # CharacterEmbeddings(),
 
                 # comment in these lines to use flair embeddings
-                FlairEmbeddings('news-forward'),
-                FlairEmbeddings('news-backward'),
+                FlairEmbeddings('news-forward', chars_per_chunk=64),
+                FlairEmbeddings('news-backward', chars_per_chunk=64),
             ]
             embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
             # 5. initialize sequence tagger
@@ -367,8 +374,9 @@ def train(jsonl_file):
             # 7. start training
             trainer.train('resources/taggers/example-pos',
                           learning_rate=0.1,
-                          mini_batch_size=4,
-                          max_epochs=150)
+                          mini_batch_size=32,
+                          max_epochs=float('inf'),
+                          monitor_test=True)
             # 8. plot weight traces (optional)
             from flair.visual.training_curves import Plotter
             plotter = Plotter()
@@ -378,7 +386,7 @@ def train(jsonl_file):
 
 def main():
     print(flair.device)
-    train('maca_output_serialized_from_nkjp_marked')
+    train('maca_output_marked')
 
 
 if __name__ == '__main__':

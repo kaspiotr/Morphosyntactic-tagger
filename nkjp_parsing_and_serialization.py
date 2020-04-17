@@ -37,7 +37,7 @@ def parse_xml(file_path):
                     token.add_changed_form(element[0].text)
                     sentence.add_token(token)
                 if element.get('name') == "nps":
-                    token.add_separator(True)
+                    token.add_separator(False)
                 if element.get('name') == "interps":
                     for subelement in list(element.iter(ns.get('cor') + 'f')):
                         if subelement.get('name') == "base":
