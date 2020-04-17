@@ -13,15 +13,13 @@ def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_
     """
     Populates dictionaries given by parameters id2pos_in_nkjp_file_dict and id2pos_in_maca_file_dict that allow to map *jsonl files lines with paragraph id
 
-    Parameters
-    ----------
-    id2pos_in_nkjp_file_dict: dictionary
+    :param id2pos_in_nkjp_file_dict: dictionary
         The dictionary that maps paragraph id to its position in *.jsonl file with paragraphs serialized from NKJP corpora.
-    id2pos_in_maca_file_dict: dictionary
+    :param id2pos_in_maca_file_dict: dictionary
         The dictionary that maps paragraph id to its position in *.jsonl file with paragraphs gained from MACA analyzer output.
-    nkjp_output_jsonl_file_path: str
+    :param nkjp_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from NKJP corpora are stored.
-    maca_output_jsonl_file_path: str
+    :param maca_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from MACA output are stored.
     """
     if nkjp_output_jsonl_file_path is None:
@@ -40,15 +38,19 @@ def populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file_dict, id2pos_in_maca_
             maca_fh.readline()
 
 
-def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_output_jsonl_file_path, maca_output_jsonl_file_path):
+def log_info_from_maca_and_nkjp_jsonl_files(nkjp_output_jsonl_file_path, maca_output_jsonl_file_path):
     """
-    Prints paragraphs that have been separated into different number of sentences in NKJP corpora and by MACA analyzer
+    Logs information included in nkjp_output.jsonl and maca_output_serialized_from_nkjp_jsol files like:
+    - total number of paragraphs in the 1-million-word NKJP subcorpus
+    - total number of paragraphs acquired from MACA after analyze of the 1-million-word NKJP subcorpus
+    - total number of sentences in the 1-million-word NKJP subcorpus
+    - total number of sentences acquired from MACA after analyze of the 1-million-word NKJP subcorpus
+    - paragraphs that have been separated into different number of sentences in NKJP corpora and by MACA analyzer
+    and writes those information in tagging_diffs.log file in resources directory of this project
 
-    Parameters
-    ----------
-    nkjp_output_jsonl_file_path: str
+    :param nkjp_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from NKJP corpora are stored.
-    maca_output_jsonl_file_path: str
+    :param maca_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from MACA output are stored.
     """
     log.basicConfig(filename='resources/tagging_diffs.log', format='%(levelname)s:%(message)s', level=log.INFO)
@@ -63,6 +65,8 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_outpu
         maca_paragraph_no = 0
         nkjp_sentences_no = 0
         nkjp_paragraph_no = 0
+        total_nkjp_sentences_no = 0
+        total_maca_sentences_no = 0
         for maca_json in maca_reader:
             nkjp_fh.seek(id2pos_in_nkjp_file[maca_json['id']]['first_byte_pos'], os.SEEK_SET)
             nkjp_json = json.loads(nkjp_fh.readline().decode('utf-8'))
@@ -74,25 +78,32 @@ def print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(nkjp_outpu
                 nkjp_sentences_no += 1
             if maca_sentences_no != nkjp_sentences_no:
                 log.info("Paragraph (id = %s) no.: %d, sentences no.: maca: %d, nkjp: %d" % (maca_json['id'], nkjp_paragraph_no, maca_sentences_no, nkjp_sentences_no))
+            total_maca_sentences_no += maca_sentences_no
             maca_sentences_no = 0
+            total_nkjp_sentences_no += nkjp_sentences_no
             nkjp_sentences_no = 0
+        log.info("\n=============================")
+        log.info("Total NKJP paragraphs no.: %s" % nkjp_paragraph_no)
+        log.info("Total MACA paragraphs no.: %s" % maca_paragraph_no)
+        log.info("Total NKJP sentences no.: %s" % total_nkjp_sentences_no)
+        log.info("Total MACA sentences no.: %s" % total_maca_sentences_no)
+        log.info("\n=============================")
 
 
 def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_path, maca_output_jsonl_file_path):
     """
-    Populates buffers used in align algorithm
+    Populates buffers used in align algorithm and logs information about number of sentences that have been
+    tokenized by MACA analyzer in the same way that they are tokenized in NKJP corpora
+    and logs information about the number of sentences that are tokenized in the same way by MACA analyser as they are
+    tokenized in NKJP corpora into tagging_diffs.log file located in resources directory of this project
 
-    Parameters
-    ----------
-    maca_output_marked_jsonl_file_path: str
+    :param maca_output_marked_jsonl_file_path: str
         The absolute path to the file *.jsonl where similarities between NKJP and MACA will be marked or just name of that file.
-    nkjp_output_jsonl_file_path: str
+    :param nkjp_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from NKJP corpora are stored.
-    maca_output_jsonl_file_path: str
+    :param maca_output_jsonl_file_path: str
         The absolute path to the *.jsonl file where data serialized from MACA output are stored.
     """
-    total_maca_sentences_no = 0
-    total_nkjp_sentences_no = 0
     matching_sentences_no = 0
     if len(maca_output_marked_jsonl_file_path.split('/')) == 1:
         maca_output_marked_jsonl_file_path = os.path.abspath(
@@ -113,36 +124,38 @@ def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_
             for maca_sentences in maca_json['sentences']:
                 for maca_sentence in maca_sentences['sentence']:
                     maca_paragraph_buffer.append(maca_sentence['token'])
-                    total_maca_sentences_no += 1
             for nkjp_sentences in nkjp_json['sentences']:
                 for nkjp_sentence in nkjp_sentences['sentence']:
                     nkjp_paragraph_buffer.append(nkjp_sentence['token'])
-                    total_nkjp_sentences_no += 1
             if len(maca_paragraph_buffer) != len(nkjp_paragraph_buffer):
                 log.info("Paragraph no.: %d and id: %s" % (paragraph_no, maca_json['id']))
                 log.info("Maca list length: %s" % len(maca_paragraph_buffer))
                 log.info("NKJP list length: %s" % len(nkjp_paragraph_buffer))
             paragraph_no += 1
-            matching_sentences_no += align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer)
+            matching_sentences_no = align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer, matching_sentences_no)
             maca_writer.write(maca_json)
-    log.info("Total MACA sentences no.: %s" % total_maca_sentences_no)
-    log.info("Total NKJP sentences no.: %s" % total_nkjp_sentences_no)
-    log.info("Number of sentences that match between NKJP and MACA: %s" % matching_sentences_no)
+    log.info("\n=============================")
+    log.info("Number of sentences that match between NKJP and MACA: %d" % matching_sentences_no)
 
 
-def align(maca_json, nkjp_buffer, maca_buffer):
+def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no):
     """
     Align algorithm that marks similarities between NKJP and MACA analyzer output POS tagging
     This method also logs information about differences between NKJP and MACA in a file tagging_diffs.log in resources
     directory of the project.
-    maca_json: json file
+
+    :param maca_json: json file
         The file of *.json type where algorithm marks if there is similarity or not in POS tagging between NKJP and MACA analyzer
-    nkjp_buffer: list of str
+    :param nkjp_buffer: list of str
         The buffer with NKJP paragraph in form of a list of strings
-    maca_buffer: list of str
+    :param maca_buffer: list of str
         The buffer with paragprahs of NKJP corpora returned by MACA analyzer in form of a list of strings
+    :param matching_sentences_no: str
+        The number of sentences that are tokenized in the same way by MACA analyzer as they are
+        tokenized in NKJP corpora
+    :return: int
+        matching_sentences_no enlarged by number of matching sentences in paragraphs that are given in maca_json json
     """
-    matching_sentences_no = 0
     nkjp_paragraph_str = ""
     maca_paragraph_str = ""
     prev_maca_token = None
@@ -195,7 +208,7 @@ def main():
 
     args = parser.parse_args()
     populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file, id2pos_in_maca_file, args.NKJP_file, args.MACA_file)
-    print_paragraphs_with_different_sentence_no_between_maca_and_nkjp(args.NKJP_file, args.MACA_file)
+    log_info_from_maca_and_nkjp_jsonl_files(args.NKJP_file, args.MACA_file)
     populate_buffers(args.MACA_marked_file, args.NKJP_file, args.MACA_file)
 
 

@@ -42,3 +42,8 @@ not to change the original structure of the project.
    `python3 maca_and_nkjp_output_merge.py maca_output_marked -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl` 
    * If you saved your output *.jsonl file produced by script *maca_output_parsing_and_serialization.py* into *resources* directory of this project and named it *maca_output_serialized_from_nkjp* than you do not have to specify the *MACA_file* argument. You can simply run this script like that:  
    `python3 maca_and_nkjp_output_merge.py maca_output_marked`
+   This script will also log information included in provided as parameters *.jsonl files and log them into a file called tagging_diff.log
+   that will be saved in resources directory of this project. File with logs will include such informations as:  
+   - total number of paragraphs in NKJP corpora and constructed by MACA analyzer,  
+   - total number of sentences in NKJP corpora and constructed by MACA analyzer,  
+   - number of sentences that are tokenized in the same way by MACA analyzer as they are tokenized in NKJP corpora

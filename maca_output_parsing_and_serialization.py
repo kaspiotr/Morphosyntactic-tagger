@@ -15,14 +15,9 @@ def parse_maca_input_from_xml_files_in_directory(file_path):
     """
     Parses all text.xml files from NKJP corpora directory
 
-    Parameters
-    ----------
-    file_path: str
+    :param file_path: str
         The absolute path to the directory with NKJP corpora.
-
-    Yields
-    ------
-    Plain text with NKJP corpora paragraph
+    :yields: Plain text with NKJP corpora paragraph
     """
     for event, element in ET.iterparse(file_path, events=("end",)):
         if element.tag == ns.get('cor') + 'div':
@@ -41,17 +36,12 @@ def _maca(input, output_xml_file_path):
     """
     Runs MACA analizer on a given by input parameter chunk of text and writes result to the file given by the output_xml_file_path parameter
 
-    Parameters
-    ----------
-    input: str
+    :param input: str
         Plain text that is an input to the MACA analyzer
-    output_xml_file_path: str
+    :param output_xml_file_path: str
         The absolute path to the *.jsonl file where output from MAC analyzer is going to be written
-
-    Raises
-    ------
-    Exception('Maca is not working properly')
-    IOError
+    :raises: Exception('Maca is not working properly')
+        IOError
         If file maca_out.xml is not found
     """
     cmd = ['maca-analyse', '-qs', 'morfeusz2-nkjp', '-o', 'ccl']
@@ -77,19 +67,16 @@ def create_xml_file_from_maca_output(jsonl_file_path, nkjp_dir_path, serialize_f
     Runs MACA analyzer on a given chunk of plain text and saves it in the maca_out.xml file in resource/maca_output/
     directory of this project
 
-    Parameters
-    ----------
-    jsonl_file_path: str
+    :param jsonl_file_path: str
         The path to the *.jsonl file where data serialized from NKJP corpora are stored.
-    nkjp_dir_path : str
+    :param nkjp_dir_path: str
         The absolute path to the directory with NKJP corpora.
-    :param serialize_from_nkjp_jsonl:
-
-    Yields
-    ------
-    String
-
-    :return:
+    :param serialize_from_nkjp_jsonl: boolean
+        Flag that if is set to True will serialize input data for MACA analyser from indicated by nkjp_dir_path file
+        or, if set to False, will collect input data for MACA analyser directly from text.xml files of NKJP corpora
+        directories
+    :yields nkjp_directory_id_with_paragraph_id: string
+        Yields string that contains inkjp directory id concatenated with paragraph number
     """
     output_xml_file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/maca_output/maca_out.xml'
     if serialize_from_nkjp_jsonl:
@@ -115,16 +102,10 @@ def parse_xml(file_path):
     """
     Parses maca_out.xml file with output gained from MACA analyzer
 
-    Parameters
-    ----------
-    file_path : str
+    :param file_path: str
         The file location of the *.xml file to be parsed.
-
-    Yields
-    ------
-    Paragraph
+    :yields Paragraph:
         An object of Paragraph type.
-
     """
     is_prev_el_tag_ns = False
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
