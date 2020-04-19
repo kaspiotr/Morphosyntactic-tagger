@@ -1,6 +1,6 @@
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
-from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings
+from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings, OneHotEmbeddings
 from sklearn.model_selection import StratifiedKFold
 from typing import List
 import os
@@ -10,6 +10,7 @@ import re
 import errno
 import shutil
 import flair
+import sys
 
 
 def _count_occurs(key, dictionary):
@@ -329,7 +330,7 @@ def train(jsonl_file):
             _write_paragraph_to_file(X, train_index, train_file_name, False)
             _write_paragraph_to_file(X, test_index, test_file_name)
             # define columns
-            columns = {0: 'text', 1: 'pos'}  # dodoc: , 3: 'is_separator'
+            columns = {0: 'text', 1: 'pos'}  # dodac: , 3: 'is_separator'
             # init a corpus using column format, data folder and the names of the train and test files
             # 1. get the corpus
             corpus: Corpus = ColumnCorpus(data_folder, columns,
@@ -353,7 +354,7 @@ def train(jsonl_file):
 
                 # comment in this line to use character embeddings
                 # CharacterEmbeddings(),
-
+                #dodac po trningu: OneHotEmbeddings(corpus=corpus),
                 # comment in these lines to use flair embeddings
                 FlairEmbeddings('news-forward', chars_per_chunk=64),
                 FlairEmbeddings('news-backward', chars_per_chunk=64),
@@ -374,8 +375,9 @@ def train(jsonl_file):
             # 7. start training
             trainer.train('resources/taggers/example-pos',
                           learning_rate=0.1,
-                          mini_batch_size=32,
-                          max_epochs=float('inf'),
+                          mini_batch_size=16,
+                          embeddings_storage_mode='none',
+                          max_epochs=sys.maxsize,
                           monitor_test=True)
             # 8. plot weight traces (optional)
             from flair.visual.training_curves import Plotter
