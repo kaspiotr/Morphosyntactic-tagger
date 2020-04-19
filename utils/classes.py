@@ -45,7 +45,7 @@ class Token:
         self.changed_form = None
         self.base_form = None
         self.tag = None
-        self.separator = False
+        self.separator = True
         self.proposed_tags = []
 
     def add_changed_form(self, changed_form):

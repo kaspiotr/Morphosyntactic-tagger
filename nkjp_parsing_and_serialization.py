@@ -9,18 +9,13 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 
 def parse_xml(file_path):
-    """Parses all ann_morphosyntax.xml files from NKJP corpora
+    """
+    Parses all ann_morphosyntax.xml files from NKJP corpora
 
-    Parameters
-    ----------
-    file_path : str
+    :param file_path: str
         The file location of the *.xml file to be parsed
-
-    Yields
-    ------
-    Paragraph
-        an object of Paragraph type
-
+    :yields Paragraph:
+        An object of Paragraph type
     """
     global token, sentence, paragraph, interps_base_form, interps_part_of_speech
     for event, element in ET.iterparse(file_path, events=("start", "end",)):
@@ -37,7 +32,7 @@ def parse_xml(file_path):
                     token.add_changed_form(element[0].text)
                     sentence.add_token(token)
                 if element.get('name') == "nps":
-                    token.add_separator(True)
+                    token.add_separator(False)
                 if element.get('name') == "interps":
                     for subelement in list(element.iter(ns.get('cor') + 'f')):
                         if subelement.get('name') == "base":

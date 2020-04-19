@@ -116,3 +116,9 @@ scripts_arguments.txt
 # output directory
 output/
 
+# test data
+testdata/
+
+# test and dev files used in training
+data/
+
