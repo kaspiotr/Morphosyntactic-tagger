@@ -21,6 +21,16 @@ def _count_occurs(key, dictionary):
 
 
 def map_paragraph_id_to_text_category_name(paragraph, text_cat_to_no_of_els):
+    """
+    Converts paragraph id (<NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    to text category name that is useful to derive text classes and use them for instance
+    in stratified k-fold cross-validation.
+    Populates text_cat_to_no_of_els dictionary for that text category.
+
+    :param paragraph: JSON object of paragraph
+    :param text_cat_to_no_of_els: dictionary: key - text category name, value - number of elements in this category
+    :return: text category name in a form of a string
+    """
     paragraph_id = paragraph["id"]
     if re.match("^BienczykPrzezroczystosc", paragraph_id):
         _count_occurs("BienczykPrzezroczystosc", text_cat_to_no_of_els)
@@ -202,6 +212,12 @@ Description of classification used in below function can be found in file 'syste
 
 
 def get_text_categories_from_nkjp_numbers_indices(text_id):
+    """
+    Creates text category name basing on NKJP corpora directories indices described in file 'system_identyfikatorow.txt'
+
+    :param text_id: paragraph id in format <NKJP corpora directory id>+_+<no of paragraph in that directory>
+    :return: text category name in form of a string
+    """
     text_category = ""
     text_category = map_first_section_of_nkjp_numbers_indeces(text_id, text_category)
     text_category = map_second_section_of_nkjp_numbers_indices(text_id, text_category)
@@ -209,6 +225,13 @@ def get_text_categories_from_nkjp_numbers_indices(text_id):
 
 
 def map_first_section_of_nkjp_numbers_indeces(text_id, text_category):
+    """
+    Maps first three digits of NKJP corpora directory name into text category
+
+    :param text_id: NKJP corpora paragraph id (in format: <NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    :param text_category: name of NKJP corpora text category in a form of a string
+    :return: name of NKJP corpora text category in a form of a string
+    """
     if re.match(r"^0\d\d", text_id):  # HTCT - Hard To Classify Texts (PL: Trudne w klasyfikacji (000-099))
         text_category += "HTCT"
         if re.match("^010", text_id):
@@ -257,6 +280,15 @@ def map_first_section_of_nkjp_numbers_indeces(text_id, text_category):
 
 
 def map_second_section_of_nkjp_numbers_indices(text_id, text_category):
+    """
+    Maps forth sign of NKJP corpora
+    paragraph id (made of digits, that has format <NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    to text category name
+
+    :param text_id: NKJP corpora paragraph id (<NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    :param text_category: name of NKJP corpora text category in a form of a string
+    :return: name of NKJP corpora text category in a form of a string
+    """
     if re.match(r"^\d\d\d-1", text_id):
         return text_category + "_IPI"
     if re.match(r"^\d\d\d-2", text_id):
@@ -302,11 +334,39 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
                                   + ";".join(map(lambda proposed_tag: proposed_tag["tag"], token_json["proposed_tags"]))
                                   + "\n")
                 write_to_file(destination_file_name, "\n")
-    print("Calkowita liczba zdan w korpusie: %s " % sentences_no)
-    print("Liczba zdan otagowanych tak samo w NKJP i MACA: %s " % sentences_that_match_no)
+    print("Total number of sentences in NKJP corpora: %s " % sentences_no)
+    print("No. of sentences that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % sentences_that_match_no)
 
 
 def train(jsonl_file):
+    """
+    Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
+    each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
+    of samples for each class).
+    Model is trained to predict part of speech tag and takes into account information about:
+    - text (plain text made of tokens that together form a sentence),
+    - occurrence of separator before token,
+    - proposed tags for given token.
+    It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
+    using a concatenation of two vector embeddings:
+    - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
+      information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
+      explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
+      contextualized by their surrounding text, meaning that the same word will have different embeddings depending on
+      its contextual use.
+      There are forward (that goes through the given on input plain text form left to right) and backward model (that
+      goes through the given on input plain text form right to left) used for part of speech (pos) tag training.
+    - One Hot Embeddings - embeddings that encode each word in a vocabulary as a one-hot vector, followed by an
+      embedding layer. These embeddings thus do not encode any prior knowledge as do most other embeddings. They also
+      differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
+      the most common words seen in the corpus, plus an UNK token for all rare words.
+      There are two One Hot Embeddings used in training:
+      - first to embed information about occurrence of separator before token,
+      - second to embed information about concatenated with a ';' proposed tags.
+    Model and training logs are saved in resources/taggers/example-pos directory.
+
+    :param jsonl_file: file in *.jsonl format with paragraphs in a form of a JSON in each line
+    """
     maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + jsonl_file + '.jsonl'
     # this is the folder in which train and test files reside
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
@@ -330,7 +390,7 @@ def train(jsonl_file):
             _write_paragraph_to_file(X, train_index, train_file_name, False)
             _write_paragraph_to_file(X, test_index, test_file_name)
             # define columns
-            columns = {0: 'text', 1: 'pos'}  # dodac: , 3: 'is_separator'
+            columns = {0: 'text', 1: 'pos', 3: 'is_separator', 4: 'proposed_tags'}
             # init a corpus using column format, data folder and the names of the train and test files
             # 1. get the corpus
             corpus: Corpus = ColumnCorpus(data_folder, columns,
@@ -348,16 +408,10 @@ def train(jsonl_file):
             print(tag_dictionary)
             # 4. initialize embeddings
             embedding_types: List[TokenEmbeddings] = [
-
-                # comment in this line to use
-                # WordEmbeddings('glove'),
-
-                # comment in this line to use character embeddings
-                # CharacterEmbeddings(),
-                #dodac po trningu: OneHotEmbeddings(corpus=corpus),
-                # comment in these lines to use flair embeddings
                 FlairEmbeddings('news-forward', chars_per_chunk=64),
                 FlairEmbeddings('news-backward', chars_per_chunk=64),
+                OneHotEmbeddings(corpus=corpus, field='is_separator'),
+                OneHotEmbeddings(corpus=corpus, field='proposed_tags'),
             ]
             embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
             # 5. initialize sequence tagger
@@ -375,8 +429,8 @@ def train(jsonl_file):
             # 7. start training
             trainer.train('resources/taggers/example-pos',
                           learning_rate=0.1,
-                          mini_batch_size=16,
-                          embeddings_storage_mode='none',
+                          mini_batch_size=32,
+                          embeddings_storage_mode='gpu',
                           max_epochs=sys.maxsize,
                           monitor_test=True)
             # 8. plot weight traces (optional)
