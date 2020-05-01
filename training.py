@@ -320,6 +320,10 @@ def _get_proposed_tag_str(proposed_tag):
     return proposed_tag["tag"]
 
 
+def _take_proposed_tag_tag(proposed_tag):
+    return proposed_tag['tag']
+
+
 def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, proposed_tags_dict, is_test_set=True):
     sentences_no = 0
     tokens_no = 0
@@ -339,14 +343,15 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
                 for token in sentence["sentence"]:
                     tokens_that_match_no += 1
                     token_json = token["token"]
-                    proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], token_json["proposed_tags"]))
-                    if proposed_tag not in proposed_tags_dict:
-                        proposed_tags_dict[proposed_tag] = 1
+                    sorted_proposed_tags_jsons_list = sorted(token_json["proposed_tags"], key=lambda pt: pt['tag'])
+                    single_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], sorted_proposed_tags_jsons_list))
+                    if single_proposed_tag not in proposed_tags_dict:
+                        proposed_tags_dict[single_proposed_tag] = 1
                     else:
-                        proposed_tags_dict[proposed_tag] += 1
+                        proposed_tags_dict[single_proposed_tag] += 1
                     write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["tag"]
                                   + " " + str(token_json["separator"]) + " "
-                                  + proposed_tag
+                                  + single_proposed_tag
                                   + "\n")
                 write_to_file(destination_file_name, "\n")
     log.info("Total number of sentences in NKJP corpora: %s " % sentences_no)
@@ -379,7 +384,7 @@ def train_sequence_labeling_model(data_folder):
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
         OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3),
-        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=4935, min_freq=1),
+        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=300, min_freq=400),
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
