@@ -1,11 +1,15 @@
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings, OneHotEmbeddings
+from flair.models import SequenceTagger
+from flair.trainers import ModelTrainer
+from flair.visual.training_curves import Plotter
 from sklearn.model_selection import StratifiedKFold
 from typing import List
 import os
 import jsonlines
 import logging as log
+import math
 import numpy as np
 import re
 import errno
@@ -324,6 +328,10 @@ def _take_proposed_tag_tag(proposed_tag):
     return proposed_tag['tag']
 
 
+def _get_unique_list_of_proposed_tags(proposed_tags_list):
+    return list({pt['tag']: pt for pt in proposed_tags_list}.values())
+
+
 def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, proposed_tags_dict, is_test_set=True):
     sentences_no = 0
     tokens_no = 0
@@ -343,15 +351,16 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
                 for token in sentence["sentence"]:
                     tokens_that_match_no += 1
                     token_json = token["token"]
-                    sorted_proposed_tags_jsons_list = sorted(token_json["proposed_tags"], key=lambda pt: pt['tag'])
-                    single_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], sorted_proposed_tags_jsons_list))
-                    if single_proposed_tag not in proposed_tags_dict:
-                        proposed_tags_dict[single_proposed_tag] = 1
+                    unique_proposed_tags_list = _get_unique_list_of_proposed_tags(token_json["proposed_tags"])
+                    sorted_proposed_tags_jsons_list = sorted(unique_proposed_tags_list, key=lambda pt: pt['tag'])
+                    joined_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], sorted_proposed_tags_jsons_list))
+                    if joined_proposed_tag not in proposed_tags_dict:
+                        proposed_tags_dict[joined_proposed_tag] = 1
                     else:
-                        proposed_tags_dict[single_proposed_tag] += 1
+                        proposed_tags_dict[joined_proposed_tag] += 1
                     write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["tag"]
                                   + " " + str(token_json["separator"]) + " "
-                                  + single_proposed_tag
+                                  + joined_proposed_tag
                                   + "\n")
                 write_to_file(destination_file_name, "\n")
     log.info("Total number of sentences in NKJP corpora: %s " % sentences_no)
@@ -361,7 +370,7 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
     log.info("No. of tokens that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % tokens_that_match_no)
 
 
-def train_sequence_labeling_model(data_folder):
+def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, iteration_no):
     # define columns
     columns = {0: 'text', 1: 'pos', 2: 'is_separator', 3: 'proposed_tags'}
     # init a corpus using column format, data folder and the names of the train and test files
@@ -383,33 +392,38 @@ def train_sequence_labeling_model(data_folder):
     embedding_types: List[TokenEmbeddings] = [
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
-        OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3),
-        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=300, min_freq=400),
+        OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
+        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25), min_freq=3)
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
-    from flair.models import SequenceTagger
     tagger: SequenceTagger = SequenceTagger(hidden_size=256,
                                             embeddings=embeddings,
                                             tag_dictionary=tag_dictionary,
                                             tag_type=tag_type,
                                             use_crf=True)
     # 6. initialize trainer
-    from flair.trainers import ModelTrainer
-
-    trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+    if iteration_no == 1:
+        trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+    else:
+        file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/taggers/example-pos/it-' + str(iteration_no - 1) + '/'
+        if os.path.isfile(file_path + 'best-model.pt'):
+            sequence_tagger_model_path = file_path + 'best-model.pt'
+        else:
+            sequence_tagger_model_path = file_path + 'final-model.pt'
+        model = SequenceTagger.load(sequence_tagger_model_path)
+        trainer: ModelTrainer = ModelTrainer(model, corpus)
 
     # 7. start training
-    trainer.train('resources/taggers/example-pos',
+    trainer.train('resources/taggers/example-pos/it-' + str(iteration_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
                   max_epochs=sys.maxsize,
                   monitor_test=True)
     # 8. plot weight traces (optional)
-    from flair.visual.training_curves import Plotter
     plotter = Plotter()
-    plotter.plot_weights('resources/taggers/example-pos/weights.txt')
+    plotter.plot_weights('resources/taggers/example-pos/it-' + str(iteration_no) + '/weights.txt')
     remove_data_directory_with_content(data_folder)
 
 
@@ -464,6 +478,7 @@ def train(jsonl_file):
         for text_cat, els_no in text_category_to_number_of_elements.items():
             log.info("%-50s%s" % (text_cat, els_no))
         proposed_tags_dict = {}
+        iteration_no = 1
         for train_index, test_index in skf.split(X, y):
             log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
             _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
@@ -474,7 +489,8 @@ def train(jsonl_file):
                 total_proposed_tags_no += proposed_tags_dict[tag]
             log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
             log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
-            train_sequence_labeling_model(data_folder)
+            train_sequence_labeling_model(data_folder, len(proposed_tags_dict), iteration_no)
+            iteration_no += 1
 
 
 def main():
