@@ -1,10 +1,15 @@
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
 from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings, OneHotEmbeddings
+from flair.models import SequenceTagger
+from flair.trainers import ModelTrainer
+from flair.visual.training_curves import Plotter
 from sklearn.model_selection import StratifiedKFold
 from typing import List
 import os
 import jsonlines
+import logging as log
+import math
 import numpy as np
 import re
 import errno
@@ -21,6 +26,16 @@ def _count_occurs(key, dictionary):
 
 
 def map_paragraph_id_to_text_category_name(paragraph, text_cat_to_no_of_els):
+    """
+    Converts paragraph id (<NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    to text category name that is useful to derive text classes and use them for instance
+    in stratified k-fold cross-validation.
+    Populates text_cat_to_no_of_els dictionary for that text category.
+
+    :param paragraph: JSON object of paragraph
+    :param text_cat_to_no_of_els: dictionary: key - text category name, value - number of elements in this category
+    :return: text category name in a form of a string
+    """
     paragraph_id = paragraph["id"]
     if re.match("^BienczykPrzezroczystosc", paragraph_id):
         _count_occurs("BienczykPrzezroczystosc", text_cat_to_no_of_els)
@@ -202,6 +217,12 @@ Description of classification used in below function can be found in file 'syste
 
 
 def get_text_categories_from_nkjp_numbers_indices(text_id):
+    """
+    Creates text category name basing on NKJP corpora directories indices described in file 'system_identyfikatorow.txt'
+
+    :param text_id: paragraph id in format <NKJP corpora directory id>+_+<no of paragraph in that directory>
+    :return: text category name in form of a string
+    """
     text_category = ""
     text_category = map_first_section_of_nkjp_numbers_indeces(text_id, text_category)
     text_category = map_second_section_of_nkjp_numbers_indices(text_id, text_category)
@@ -209,6 +230,13 @@ def get_text_categories_from_nkjp_numbers_indices(text_id):
 
 
 def map_first_section_of_nkjp_numbers_indeces(text_id, text_category):
+    """
+    Maps first three digits of NKJP corpora directory name into text category
+
+    :param text_id: NKJP corpora paragraph id (in format: <NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    :param text_category: name of NKJP corpora text category in a form of a string
+    :return: name of NKJP corpora text category in a form of a string
+    """
     if re.match(r"^0\d\d", text_id):  # HTCT - Hard To Classify Texts (PL: Trudne w klasyfikacji (000-099))
         text_category += "HTCT"
         if re.match("^010", text_id):
@@ -257,6 +285,15 @@ def map_first_section_of_nkjp_numbers_indeces(text_id, text_category):
 
 
 def map_second_section_of_nkjp_numbers_indices(text_id, text_category):
+    """
+    Maps forth sign of NKJP corpora
+    paragraph id (made of digits, that has format <NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    to text category name
+
+    :param text_id: NKJP corpora paragraph id (<NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    :param text_category: name of NKJP corpora text category in a form of a string
+    :return: name of NKJP corpora text category in a form of a string
+    """
     if re.match(r"^\d\d\d-1", text_id):
         return text_category + "_IPI"
     if re.match(r"^\d\d\d-2", text_id):
@@ -287,26 +324,140 @@ def _get_proposed_tag_str(proposed_tag):
     return proposed_tag["tag"]
 
 
-def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, is_test_set=True):
+def _take_proposed_tag_tag(proposed_tag):
+    return proposed_tag['tag']
+
+
+def _get_unique_list_of_proposed_tags(proposed_tags_list):
+    return list({pt['tag']: pt for pt in proposed_tags_list}.values())
+
+
+def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name, proposed_tags_dict, is_test_set=True):
     sentences_no = 0
+    tokens_no = 0
+    tokens_that_match_no = 0
     sentences_that_match_no = 0
+    if is_test_set:
+        log.info("Test set statistics:")
+    else:
+        log.info("Train set statistics:")
     for paragraph_json_idx in paragraphs_indexes:
         for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
             sentences_no += 1
+            for _ in sentence["sentence"]:
+                tokens_no += 1
             if is_test_set or sentence["match"]:
                 sentences_that_match_no += 1
                 for token in sentence["sentence"]:
+                    tokens_that_match_no += 1
                     token_json = token["token"]
+                    unique_proposed_tags_list = _get_unique_list_of_proposed_tags(token_json["proposed_tags"])
+                    sorted_proposed_tags_jsons_list = sorted(unique_proposed_tags_list, key=lambda pt: pt['tag'])
+                    joined_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], sorted_proposed_tags_jsons_list))
+                    if joined_proposed_tag not in proposed_tags_dict:
+                        proposed_tags_dict[joined_proposed_tag] = 1
+                    else:
+                        proposed_tags_dict[joined_proposed_tag] += 1
                     write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["tag"]
                                   + " " + str(token_json["separator"]) + " "
-                                  + ";".join(map(lambda proposed_tag: proposed_tag["tag"], token_json["proposed_tags"]))
+                                  + joined_proposed_tag
                                   + "\n")
                 write_to_file(destination_file_name, "\n")
-    print("Calkowita liczba zdan w korpusie: %s " % sentences_no)
-    print("Liczba zdan otagowanych tak samo w NKJP i MACA: %s " % sentences_that_match_no)
+    log.info("Total number of sentences in NKJP corpora: %s " % sentences_no)
+    log.info("Total number of tokens in NKJP corpora: %s " % tokens_no)
+    log.info("Length of proposed tags dictionary: %s" % len(proposed_tags_dict))
+    log.info("No. of sentences that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % sentences_that_match_no)
+    log.info("No. of tokens that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % tokens_that_match_no)
+
+
+def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, iteration_no):
+    # define columns
+    columns = {0: 'text', 1: 'pos', 2: 'is_separator', 3: 'proposed_tags'}
+    # init a corpus using column format, data folder and the names of the train and test files
+    # 1. get the corpus
+    corpus: Corpus = ColumnCorpus(data_folder, columns,
+                                  train_file='train',
+                                  test_file='test',
+                                  dev_file=None)
+    log.info(corpus)
+    # len(corpus.train)
+    # log.info(corpus.train[0].to_tagged_string('pos'))
+    # log.info("TRAIN:", train_index, "TEST:", test_index)
+    # 2. what tag do we want to predict
+    tag_type = 'pos'
+    # 3. make the tag dictionary from the corpus
+    tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
+    log.info(tag_dictionary)
+    # 4. initialize embeddings
+    embedding_types: List[TokenEmbeddings] = [
+        FlairEmbeddings('pl-forward', chars_per_chunk=64),
+        FlairEmbeddings('pl-backward', chars_per_chunk=64),
+        OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
+        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25), min_freq=3)
+    ]
+    embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
+    # 5. initialize sequence tagger
+    tagger: SequenceTagger = SequenceTagger(hidden_size=256,
+                                            embeddings=embeddings,
+                                            tag_dictionary=tag_dictionary,
+                                            tag_type=tag_type,
+                                            use_crf=True)
+    # 6. initialize trainer
+    if iteration_no == 1:
+        trainer: ModelTrainer = ModelTrainer(tagger, corpus)
+    else:
+        file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/taggers/example-pos/it-' + str(iteration_no - 1) + '/'
+        if os.path.isfile(file_path + 'best-model.pt'):
+            sequence_tagger_model_path = file_path + 'best-model.pt'
+        else:
+            sequence_tagger_model_path = file_path + 'final-model.pt'
+        model = SequenceTagger.load(sequence_tagger_model_path)
+        trainer: ModelTrainer = ModelTrainer(model, corpus)
+
+    # 7. start training
+    trainer.train('resources/taggers/example-pos/it-' + str(iteration_no),
+                  learning_rate=0.1,
+                  mini_batch_size=32,
+                  embeddings_storage_mode='gpu',
+                  max_epochs=sys.maxsize,
+                  monitor_test=True)
+    # 8. plot weight traces (optional)
+    plotter = Plotter()
+    plotter.plot_weights('resources/taggers/example-pos/it-' + str(iteration_no) + '/weights.txt')
+    remove_data_directory_with_content(data_folder)
 
 
 def train(jsonl_file):
+    """
+    Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
+    each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
+    of samples for each class).
+    Model is trained to predict part of speech tag and takes into account information about:
+    - text (plain text made of tokens that together form a sentence),
+    - occurrence of separator before token,
+    - proposed tags for given token.
+    It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
+    using a concatenation of two vector embeddings:
+    - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
+      information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
+      explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
+      contextualized by their surrounding text, meaning that the same word will have different embeddings depending on
+      its contextual use.
+      There are forward (that goes through the given on input plain text form left to right) and backward model (that
+      goes through the given on input plain text form right to left) used for part of speech (pos) tag training.
+    - One Hot Embeddings - embeddings that encode each word in a vocabulary as a one-hot vector, followed by an
+      embedding layer. These embeddings thus do not encode any prior knowledge as do most other embeddings. They also
+      differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
+      the most common words seen in the corpus, plus an UNK token for all rare words.
+      There are two One Hot Embeddings used in training:
+      - first to embed information about occurrence of separator before token,
+      - second to embed information about concatenated with a ';' proposed tags.
+    Model and training logs are saved in resources/taggers/example-pos directory.
+
+    :param jsonl_file: file in *.jsonl format with paragraphs in a form of a JSON in each line
+    """
+    log.basicConfig(filename='resources/training.log', format='%(levelname)s:%(message)s', level=log.INFO)
+    log.info(flair.device)
     maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + jsonl_file + '.jsonl'
     # this is the folder in which train and test files reside
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
@@ -322,72 +473,27 @@ def train(jsonl_file):
         X = np.array(paragraphs_X)
         y = np.array(paragraph_text_category_y)
         skf = StratifiedKFold(n_splits=10)
-        print("Number of paragraphs of each text category\n")
-        print("%-50s%s" % ("Text category", "paragraphs number"))
+        log.info("Number of paragraphs of each text category\n")
+        log.info("%-50s%s" % ("Text category", "paragraphs number"))
         for text_cat, els_no in text_category_to_number_of_elements.items():
-            print("%-50s%s" % (text_cat, els_no))
+            log.info("%-50s%s" % (text_cat, els_no))
+        proposed_tags_dict = {}
+        iteration_no = 1
         for train_index, test_index in skf.split(X, y):
-            _write_paragraph_to_file(X, train_index, train_file_name, False)
-            _write_paragraph_to_file(X, test_index, test_file_name)
-            # define columns
-            columns = {0: 'text', 1: 'pos'}  # dodac: , 3: 'is_separator'
-            # init a corpus using column format, data folder and the names of the train and test files
-            # 1. get the corpus
-            corpus: Corpus = ColumnCorpus(data_folder, columns,
-                                          train_file='train',
-                                          test_file='test',
-                                          dev_file=None)
-            print(corpus)
-            # len(corpus.train)
-            # print(corpus.train[0].to_tagged_string('pos'))
-            # print("TRAIN:", train_index, "TEST:", test_index)
-            # 2. what tag do we want to predict
-            tag_type = 'pos'
-            # 3. make the tag dictionary from the corpus
-            tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
-            print(tag_dictionary)
-            # 4. initialize embeddings
-            embedding_types: List[TokenEmbeddings] = [
-
-                # comment in this line to use
-                # WordEmbeddings('glove'),
-
-                # comment in this line to use character embeddings
-                # CharacterEmbeddings(),
-                #dodac po trningu: OneHotEmbeddings(corpus=corpus),
-                # comment in these lines to use flair embeddings
-                FlairEmbeddings('news-forward', chars_per_chunk=64),
-                FlairEmbeddings('news-backward', chars_per_chunk=64),
-            ]
-            embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
-            # 5. initialize sequence tagger
-            from flair.models import SequenceTagger
-            tagger: SequenceTagger = SequenceTagger(hidden_size=256,
-                                                    embeddings=embeddings,
-                                                    tag_dictionary=tag_dictionary,
-                                                    tag_type=tag_type,
-                                                    use_crf=True)
-            # 6. initialize trainer
-            from flair.trainers import ModelTrainer
-
-            trainer: ModelTrainer = ModelTrainer(tagger, corpus)
-
-            # 7. start training
-            trainer.train('resources/taggers/example-pos',
-                          learning_rate=0.1,
-                          mini_batch_size=16,
-                          embeddings_storage_mode='none',
-                          max_epochs=sys.maxsize,
-                          monitor_test=True)
-            # 8. plot weight traces (optional)
-            from flair.visual.training_curves import Plotter
-            plotter = Plotter()
-            plotter.plot_weights('resources/taggers/example-pos/weights.txt')
-            remove_data_directory_with_content(data_folder)
+            log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
+            _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
+            _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
+            log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
+            total_proposed_tags_no = 0
+            for tag in proposed_tags_dict:
+                total_proposed_tags_no += proposed_tags_dict[tag]
+            log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
+            log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
+            train_sequence_labeling_model(data_folder, len(proposed_tags_dict), iteration_no)
+            iteration_no += 1
 
 
 def main():
-    print(flair.device)
     train('maca_output_marked')
 
 
