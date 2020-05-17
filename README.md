@@ -37,13 +37,22 @@ not to change the original structure of the project.
    * You can run this script providing as it's first argument the absolute path to the *.jsonl with marked similarities in POS tagging between MACA output and NKJP corpora:  
    `python3 maca_and_nkjp_output_merge.py /home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl -NKJP_file='/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl' -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl`
    * or you can run this script providing only the name of the output *.jsonl file and than it will be saved in the output directory of this project:
-   `python3 maca_and_nkjp_output_merge.py maca_output_marked.jsonl -NKJP_file='/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl' -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl`
+   `python3 maca_and_nkjp_output_merge.py maca_output_marked.jsonl -NKJP_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl`
    * If you saved your output *.jsonl file produced by script *nkjp_parsing_and_serialization.py* into *resources* directory of this project and named it *nkjp_output* than you do not have to specify the *NKJP_file* argument. You can simply run this script like that:  
    `python3 maca_and_nkjp_output_merge.py maca_output_marked -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl` 
    * If you saved your output *.jsonl file produced by script *maca_output_parsing_and_serialization.py* into *resources* directory of this project and named it *maca_output_serialized_from_nkjp* than you do not have to specify the *MACA_file* argument. You can simply run this script like that:  
-   `python3 maca_and_nkjp_output_merge.py maca_output_marked`
+   `python3 maca_and_nkjp_output_merge.py maca_output_marked`  
+   This script will create file *maca_output_marked* that will be saved in *resources/output* directory of this project.  
    This script will also log information included in provided as parameters *.jsonl files and log them into a file called tagging_diff.log
    that will be saved in resources directory of this project. File with logs will include such informations as:  
-   - total number of paragraphs in NKJP corpora and constructed by MACA analyzer,  
-   - total number of sentences in NKJP corpora and constructed by MACA analyzer,  
-   - number of sentences that are tokenized in the same way by MACA analyzer as they are tokenized in NKJP corpora
+     * total number of paragraphs in NKJP corpora and constructed by MACA analyzer,  
+     * total number of sentences in NKJP corpora and constructed by MACA analyzer,  
+     * number of sentences that are tokenized in the same way by MACA analyzer as they are tokenized in NKJP corpora
+ * **training.py**:
+   * you can ran this script providing as it's first argument stratified 10 fold cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
+   If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
+   `python3 maca_and_nkjp_output_merge.py 1`  
+   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:
+   `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
+   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
+   `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`

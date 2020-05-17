@@ -6,6 +6,7 @@ from flair.trainers import ModelTrainer
 from flair.visual.training_curves import Plotter
 from sklearn.model_selection import StratifiedKFold
 from typing import List
+import argparse
 import os
 import jsonlines
 import logging as log
@@ -370,7 +371,40 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
     log.info("No. of tokens that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % tokens_that_match_no)
 
 
-def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, iteration_no):
+def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, skf_split_no):
+    """
+    Trains the sequence labeling model.
+    Model is trained to predict part of speech tag and takes into account information about:
+    - text (plain text made of tokens that together form a sentence),
+    - occurrence of separator before token,
+    - proposed tags for given token.
+    It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
+    using a concatenation of two vector embeddings:
+
+    - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
+      information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
+      explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
+      contextualized by their surrounding text, meaning that the same word will have different embeddings depending on
+      its contextual use.
+      There are forward (that goes through the given on input plain text form left to right) and backward model (that
+      goes through the given on input plain text form right to left) used for part of speech (pos) tag training.
+    - One Hot Embeddings - embeddings that encode each word in a vocabulary as a one-hot vector, followed by an
+      embedding layer. These embeddings thus do not encode any prior knowledge as do most other embeddings. They also
+      differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
+      the most common words seen in the corpus, plus an UNK token for all rare words.
+      There are two One Hot Embeddings used in training:
+      - first to embed information about occurrence of separator before token,
+      - second to embed information about concatenated with a ';' proposed tags.
+    Model and training logs are saved in resources/taggers/example-pos directory.
+    This is the method where internal states of forward and backward Flair models are taken at the end of each token
+    and, supplemented by information about occurrence of separator before token and proposed tags for given token used
+    to train model for one of stratified 10 fold cross validation splits.
+
+    :param data_folder: folder where files with column corpus split into column corpus is done
+    :param proposed_tags_vocabulary_size: number of proposed tags
+    :param skf_split_no: number that indicates one of stratified 10 fold cross validation splits (from range 1 to 10)
+    used to train the model
+    """
     # define columns
     columns = {0: 'text', 1: 'pos', 2: 'is_separator', 3: 'proposed_tags'}
     # init a corpus using column format, data folder and the names of the train and test files
@@ -401,21 +435,11 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, it
                                             embeddings=embeddings,
                                             tag_dictionary=tag_dictionary,
                                             tag_type=tag_type,
-                                            use_crf=True)
+                                            use_crf=False)
     # 6. initialize trainer
-    if iteration_no == 1:
-        trainer: ModelTrainer = ModelTrainer(tagger, corpus)
-    else:
-        file_path = os.path.dirname(os.path.abspath(__file__)) + '/resources/taggers/example-pos/it-' + str(iteration_no - 1) + '/'
-        if os.path.isfile(file_path + 'best-model.pt'):
-            sequence_tagger_model_path = file_path + 'best-model.pt'
-        else:
-            sequence_tagger_model_path = file_path + 'final-model.pt'
-        model = SequenceTagger.load(sequence_tagger_model_path)
-        trainer: ModelTrainer = ModelTrainer(model, corpus)
-
+    trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train('resources/taggers/example-pos/it-' + str(iteration_no),
+    trainer.train('resources/taggers/example-pos/it-' + str(skf_split_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -423,11 +447,11 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, it
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights('resources/taggers/example-pos/it-' + str(iteration_no) + '/weights.txt')
+    plotter.plot_weights('resources/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
     remove_data_directory_with_content(data_folder)
 
 
-def train(jsonl_file):
+def train(skf_split_no, jsonl_file_path):
     """
     Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
     each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
@@ -452,13 +476,24 @@ def train(jsonl_file):
       There are two One Hot Embeddings used in training:
       - first to embed information about occurrence of separator before token,
       - second to embed information about concatenated with a ';' proposed tags.
-    Model and training logs are saved in resources/taggers/example-pos directory.
+    Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
+    Model and training logs are saved in resources/taggers/example-pos directory/it-<skf_split_no> (where <skf_split_no>
+    is the number of stratified 10 fold cross validation split number used to train the model).
+    Additionally method logs other training logs files and saves them in folder resources of this project under name
+    training_<skf_plit_no>.log
 
-    :param jsonl_file: file in *.jsonl format with paragraphs in a form of a JSON in each line
+    :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
+
+    :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
+    that file
     """
-    log.basicConfig(filename='resources/training.log', format='%(levelname)s:%(message)s', level=log.INFO)
+    log.basicConfig(filename='resources/training_' + str(skf_split_no) + '.log', format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
-    maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + jsonl_file + '.jsonl'
+    if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
+        file_name = jsonl_file_path.split('/')[-1]
+        maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl'
+    else:
+        maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
     train_file_name = data_folder + "/train"
@@ -472,7 +507,7 @@ def train(jsonl_file):
             paragraph_text_category_y.append(map_paragraph_id_to_text_category_name(paragraph, text_category_to_number_of_elements))
         X = np.array(paragraphs_X)
         y = np.array(paragraph_text_category_y)
-        skf = StratifiedKFold(n_splits=10)
+        skf = StratifiedKFold(n_splits=10, shuffle=False, random_state=None)
         log.info("Number of paragraphs of each text category\n")
         log.info("%-50s%s" % ("Text category", "paragraphs number"))
         for text_cat, els_no in text_category_to_number_of_elements.items():
@@ -480,21 +515,31 @@ def train(jsonl_file):
         proposed_tags_dict = {}
         iteration_no = 1
         for train_index, test_index in skf.split(X, y):
-            log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
-            _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
-            _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
-            log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
-            total_proposed_tags_no = 0
-            for tag in proposed_tags_dict:
-                total_proposed_tags_no += proposed_tags_dict[tag]
-            log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
-            log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
-            train_sequence_labeling_model(data_folder, len(proposed_tags_dict), iteration_no)
+            if iteration_no == skf_split_no:
+                log.info("Stratified 10 fold cross validation split number: %d" % iteration_no)
+                log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
+                _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
+                _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
+                log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
+                total_proposed_tags_no = 0
+                for tag in proposed_tags_dict:
+                    total_proposed_tags_no += proposed_tags_dict[tag]
+                log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
+                log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
+                train_sequence_labeling_model(data_folder, len(proposed_tags_dict), iteration_no)
             iteration_no += 1
 
 
 def main():
-    train('maca_output_marked')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("skf_split_no", help="The number from range 1 to 10 that indicates the split of stratified "
+                                             "10-fold cross validation used to train the model", type=int)
+    parser.add_argument("-file_path",
+                        help="The absolute path with name of the saved *.jsonl file or just the name of that file.",
+                        default='/output/maca_output_marked',
+                        type=str)
+    args = parser.parse_args()
+    train(args.skf_split_no, args.file_path)
 
 
 if __name__ == '__main__':
