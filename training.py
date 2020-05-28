@@ -413,7 +413,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                                   train_file='train',
                                   test_file='test',
                                   dev_file=None,
-                                  encoding='latin-1')
+                                  encoding='latin-1').downsample(0.01)
     log.info(corpus)
     # len(corpus.train)
     # log.info(corpus.train[0].to_tagged_string('pos'))
