@@ -410,10 +410,9 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # init a corpus using column format, data folder and the names of the train and test files
     # 1. get the corpus
     corpus: Corpus = ColumnCorpus(data_folder, columns,
-                                  train_file='train',
-                                  test_file='test',
-                                  dev_file=None,
-                                  encoding='latin-1').downsample(0.01)
+                                  train_file='train_' + str(skf_split_no),
+                                  test_file='test_' + str(skf_split_no),
+                                  dev_file=None).downsample(0.01)
     log.info(corpus)
     # len(corpus.train)
     # log.info(corpus.train[0].to_tagged_string('pos'))
@@ -497,8 +496,8 @@ def train(skf_split_no, jsonl_file_path):
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
-    train_file_name = data_folder + "/train"
-    test_file_name = data_folder + "/test"
+    train_file_name = data_folder + "/train_" + str(skf_split_no)
+    test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
         text_category_to_number_of_elements = {}
         paragraphs_X = []
