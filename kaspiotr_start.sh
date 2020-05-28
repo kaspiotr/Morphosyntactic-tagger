@@ -6,7 +6,7 @@
 ## Ilość pamięci przypadającej na jeden rdzeń obliczeniowy (domyślnie 5GB na rdzeń)
 #SBATCH --mem-per-cpu=64GB
 ## Maksymalny czas trwania zlecenia (format HH:MM:SS)
-#SBATCH --time=00:01:00
+#SBATCH --time=72:00:00
 ## Nazwa grantu do rozliczenia zużycia zasobów
 #SBATCH -A lemkingpu2
 ## Zlecenie zadan odbywa sie poprzez podanie ponizszych dwoch opcji systemu kolejkowego
@@ -26,5 +26,5 @@ export LD_LIBRARY_PATH=/net/scratch/people/plgkaspiotr/cuda/lib64:$LD_LIBRARY_PA
 export LIBRARY_PATH=/net/scratch/people/plgkaspiotr/cuda/lib64:$LIBRARY_PATH
 export CPATH=/net/scratch/people/plgkaspiotr/cuda/include:$CPATH
 
-echo {1..10} | xargs -t -P 10 -n 1 srun -n 1 -N 1 --mem=6gb python3 training.py
+echo {1..10} | xargs -t -P 10 -n 1 srun -n 1 -N 1 --mem=16gb --time=72:00:00 python3 training.py
 
