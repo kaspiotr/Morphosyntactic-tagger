@@ -412,7 +412,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     corpus: Corpus = ColumnCorpus(data_folder, columns,
                                   train_file='train',
                                   test_file='test',
-                                  dev_file=None)
+                                  dev_file=None,
+                                  encoding='ISO-8859-1')
     log.info(corpus)
     # len(corpus.train)
     # log.info(corpus.train[0].to_tagged_string('pos'))
