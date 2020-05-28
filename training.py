@@ -518,10 +518,10 @@ def train(skf_split_no, jsonl_file_path):
         for train_index, test_index in skf.split(X, y):
             if iteration_no == skf_split_no:
                 log.info("Stratified 10 fold cross validation split number: %d" % iteration_no)
-                log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
+                # log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
                 _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
                 _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
-                log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
+                # log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
                 total_proposed_tags_no = 0
                 for tag in proposed_tags_dict:
                     total_proposed_tags_no += proposed_tags_dict[tag]
