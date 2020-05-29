@@ -16,6 +16,7 @@ import re
 import errno
 import shutil
 import flair
+import torch
 import sys
 
 
@@ -489,6 +490,7 @@ def train(skf_split_no, jsonl_file_path):
     """
     log.basicConfig(filename='resources/training_' + str(skf_split_no) + '.log', format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
+    log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
         file_name = jsonl_file_path.split('/')[-1]
         maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl'
