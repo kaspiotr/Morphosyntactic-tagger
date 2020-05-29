@@ -318,7 +318,7 @@ def write_to_file(file_name, content):
 
 
 def remove_data_directory_with_content(directory_path):
-    shutil.rmtree(directory_path)
+    shutil.rmtree(directory_path, ignore_errors=True)
 
 
 def _get_proposed_tag_str(proposed_tag):
