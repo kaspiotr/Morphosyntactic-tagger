@@ -318,10 +318,6 @@ def write_to_file(file_name, content):
             raise
 
 
-def remove_data_directory_with_content(directory_path):
-    shutil.rmtree(directory_path, ignore_errors=True)
-
-
 def _get_proposed_tag_str(proposed_tag):
     return proposed_tag["tag"]
 
@@ -449,7 +445,6 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 8. plot weight traces (optional)
     plotter = Plotter()
     plotter.plot_weights('resources/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
-    remove_data_directory_with_content(data_folder)
 
 
 def train(skf_split_no, jsonl_file_path):
