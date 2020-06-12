@@ -4,10 +4,10 @@ from flair.models import SequenceTagger
 
 def main():
     # load the model you trained
-    model = SequenceTagger.load('resources/taggers/example-pos/best-model.pt')
+    model = SequenceTagger.load('resources/taggers/example-pos/it-3/best-model.pt')
 
     # create example sentence
-    sentence = Sentence('Placek ziemniaczany są lepsze niż kremówki')
+    sentence = Sentence('Mam próbkę analizy morfologicznej .')
 
     # predict tags and print
     model.predict(sentence)
