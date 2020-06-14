@@ -12,11 +12,17 @@ def prettify(element, indent=' '):
             element.tail = '\n' + indent * (level - 1)  # for parent close
         else:
             if children:
-                element.text = '\n' + indent * (level + 1)  # for child open
+                if children[0][1].tag != 'cesAna':
+                    element.text = '\n' + indent * level  # for child open
+                else:
+                    element.text = '\n' + indent * (level + 1)  # for child open
             if queue:
                 element.tail = '\n' + indent * queue[0][0]  # for sibling open
             else:
-                element.tail = '\n' + indent * (level - 1)  # for parent close
+                if element.tag != 'chunkList':
+                    element.tail = '\n' + indent * (level - 1)  # for parent close
+                else:
+                    element.tail = '\n' + indent * level
             queue[0:0] = children  # prepend so children come before siblings
 
 
