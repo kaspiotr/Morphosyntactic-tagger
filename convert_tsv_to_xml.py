@@ -17,7 +17,15 @@ def prettify(element, indent=' '):
                 else:
                     element.text = '\n' + indent * (level + 1)  # for child open
             if queue:
-                element.tail = '\n' + indent * queue[0][0]  # for sibling open
+                if element.tag != 'orth':
+                    if element.tag == 'tok':
+                        element.tail = '\n' + indent * (queue[0][0] - 1)
+                    else:
+                        element.tail = '\n' + indent * queue[0][0]  # for sibling open
+                else:
+                    element.tail = '\n' + indent * (queue[0][0] - 1)
+                    value = queue.pop(0)
+                    queue.insert(0, [value[0] - 1, value[1]])
             else:
                 if element.tag != 'chunkList':
                     element.tail = '\n' + indent * (level - 1)  # for parent close
@@ -26,15 +34,15 @@ def prettify(element, indent=' '):
             queue[0:0] = children  # prepend so children come before siblings
 
 
-def _create_token_object(sentence_data, sentence_object, number, word_string):
+def _create_token_object(sentence_data, sentence_object):
     for token_data in sentence_data:
         token = ET.SubElement(sentence_object, 'tok')
-        _create_orth_and_lex_objects(token_data, token, number, word_string)
+        _create_orth_and_lex_objects(token_data, token)
 
 
-def _create_orth_and_lex_objects(token_data, token_object, number, word_string):
+def _create_orth_and_lex_objects(token_data, token_object):
     orth = ET.SubElement(token_object, 'orth')
-    lex = ET.SubElement(token_object, 'lex')
+    lex = ET.SubElement(token_object, 'lex', disamb='1')
     base = ET.SubElement(lex, 'base')
     ctag = ET.SubElement(lex, 'ctag')
     orth.text = token_data.split(' ')[0]
@@ -47,45 +55,35 @@ def convert_tsv_to_xml():
     xml_doc = ET.Element('cesAna')
     xml_doc.set("xmlns:xlink", "http://www.w3.org/1999/xlink")
     chunk_list = ET.SubElement(xml_doc, 'chunkList')
-    paragraph = ET.SubElement(chunk_list, 'chunk', id='ch1', type='p')
+    paragraph = ET.SubElement(chunk_list, 'chunk', type='p')
     create_xml_file(paragraph)
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
-    tree.write('resources/example_0.xml', encoding="UTF-8", xml_declaration=True)
+    root = tree.getroot()
+    with open('resources/example_file.xml', "w", encoding='UTF-8') as xf:
+        doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
+               'SYSTEM "xcesAnaIPI.dtd">\n'
+        to_string = ET.tostring(root).decode('utf-8')
+        file = f"{doc_type}{to_string}"
+        xf.write(file)
 
 
 def create_xml_file(paragraph_object):
-    # xml_doc = ET.Element('chunkList')
-    # xml_doc.set("xmlns:xlink", "http://www.w3.org/1999/xlink")
-    # paragraph = ET.SubElement(xml_doc, 'chunk', id='ch1', type='p')
     for sentence_data in read_sentence_from_tsv():
-        sentence_object = ET.SubElement(paragraph_object, 'sentence')
-        _create_token_object(sentence_data, sentence_object, 1, 'This')
-    # for row in rows:
-    #     _create_token_object(sentence_object, 1, 'This')
-    # _create_token_object(sentence, 2, 'is')
-    # _create_token_object(sentence, 3, 'first')
-    # _create_token_object(sentence, 4, 'example')
-    # _create_token_object(sentence, 5, 'sentence')
-    # _create_token_object(sentence, 6, '.')
-    # prettify(xml_doc)
-    # tree = ET.ElementTree(xml_doc)
-    # tree.write('resources/example_1.xml', encoding="UTF-8", xml_declaration=True)
+        sentence_object = ET.SubElement(paragraph_object, 'chunk', type='s')
+        _create_token_object(sentence_data, sentence_object)
 
 
 def read_sentence_from_tsv():
-    with open("resources/taggers/example-pos/it-1/test.tsv") as fd:
+    with open("resources/taggers/example-pos/it-2/test.tsv") as fd:
         rd = csv.reader(fd, delimiter="\t")
         sentence = []
         for row in rd:
-            # print(row)
             if row:
                 sentence.append(row[0])
             else:
                 yield sentence
-                # create_xml_file(rows)
                 sentence.clear()
-            # print(row[0].split(" ")[0])
 
 
 def main():
