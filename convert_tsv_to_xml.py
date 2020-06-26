@@ -1,5 +1,8 @@
 import csv
+import os
+import glob
 import sys
+import re
 import xml.etree.ElementTree as ET
 
 
@@ -18,7 +21,7 @@ def prettify(element, indent=' '):
                     element.text = '\n' + indent * (level + 1)  # for child open
             if queue:
                 if element.tag != 'orth':
-                    if element.tag == 'tok':
+                    if element.tag == 'tok' or element.tag == 'ns' or element.tag == 'chunk':
                         element.tail = '\n' + indent * (queue[0][0] - 1)
                     else:
                         element.tail = '\n' + indent * queue[0][0]  # for sibling open
@@ -36,6 +39,8 @@ def prettify(element, indent=' '):
 
 def _create_token_object(sentence_data, sentence_object):
     for token_data in sentence_data:
+        if token_data.split(' ')[0] == '.':
+            ET.SubElement(sentence_object, 'ns')
         token = ET.SubElement(sentence_object, 'tok')
         _create_orth_and_lex_objects(token_data, token)
 
@@ -47,12 +52,13 @@ def _create_orth_and_lex_objects(token_data, token_object):
     ctag = ET.SubElement(lex, 'ctag')
     orth.text = token_data.split(' ')[0]
     base.text = token_data.split(' ')[0]
-    ctag.text = token_data.split(' ')[1]
+    ctag.text = re.sub("num:::", "ign", token_data.split(' ')[1])
 
 
-def convert_tsv_to_xml():
+def convert_tsv_to_xml(tsv_file_path):
+    split_no = tsv_file_path.split("/")[-2].split("-")[-1]
     csv.field_size_limit(sys.maxsize)
-    xml_doc = ET.Element('cesAna')
+    xml_doc = ET.Element('cesAna', version="1.0", type="lex disamb")
     xml_doc.set("xmlns:xlink", "http://www.w3.org/1999/xlink")
     chunk_list = ET.SubElement(xml_doc, 'chunkList')
     paragraph = ET.SubElement(chunk_list, 'chunk', type='p')
@@ -60,10 +66,10 @@ def convert_tsv_to_xml():
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
-    with open('resources/example_file.xml', "w", encoding='UTF-8') as xf:
+    with open("resources/test_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
         doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
                'SYSTEM "xcesAnaIPI.dtd">\n'
-        to_string = ET.tostring(root).decode('utf-8')
+        to_string = ET.tostring(root, encoding='utf-8').decode('utf-8')
         file = f"{doc_type}{to_string}"
         xf.write(file)
 
@@ -87,9 +93,10 @@ def read_sentence_from_tsv():
 
 
 def main():
-    convert_tsv_to_xml()
-    # read_tsv()
-    # create_xml_files()
+    path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/resources/taggers/example-pos/*/test.tsv"
+    tsv_files = glob.iglob(path)
+    for tsv_file_path in tsv_files:
+        convert_tsv_to_xml(tsv_file_path)
 
 
 if __name__ == '__main__':
