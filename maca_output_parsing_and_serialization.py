@@ -148,8 +148,8 @@ def main():
                         default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
     args = parser.parse_args()
 
-    for paragraph_id in create_xml_file_from_maca_output(args.NKJP_file_path, args.NKJP_dir_path):
-        write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, args.MACA_file)
+    # for paragraph_id in create_xml_file_from_maca_output(args.NKJP_file_path, args.NKJP_dir_path):
+    #     write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, args.MACA_file)
     for paragraph_id in create_xml_file_from_maca_output(args.NKJP_file_path, args.NKJP_dir_path, True):
         write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parse_xml, args.MACA_serialized_file)
 
