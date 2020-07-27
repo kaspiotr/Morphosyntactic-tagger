@@ -131,7 +131,7 @@ def parse_xml(file_path):
                         morph_interp = subelement[1].text
                         token.add_proposed_tags(interps_base_form + ":" + morph_interp)
                         token.add_base_form(interps_base_form)
-                        token.add_tag(morph_interp)
+                        token.add_tag('num' if morph_interp == 'num:::' else morph_interp)
             if element.tag == "sentence":
                 paragraph.add_sentence(sentence)
             if element.tag == "chunk":
