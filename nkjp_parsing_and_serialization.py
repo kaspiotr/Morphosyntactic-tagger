@@ -44,7 +44,8 @@ def parse_xml(file_path):
                             interps_part_of_speech = subelement[0].get('value')
                         if subelement.get('name') == "msd":
                             for proposed_tag_element in list(subelement[0].iter(ns.get('cor') + 'symbol')):
-                                token.add_proposed_tags(interps_base_form + ":" + interps_part_of_speech + ":" + proposed_tag_element.get('value'))
+                                token.add_proposed_tags(interps_base_form + ":" + interps_part_of_speech + ":"
+                                                        + proposed_tag_element.get('value'))
                 if element.get('name') == "disamb":
                     disamb_base_form_with_tag = element[0][1][0].text.split(":")
                     token.add_base_form(disamb_base_form_with_tag[0])
@@ -58,7 +59,8 @@ def parse_xml(file_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", help="The absolute path with name of the saved *jsonl file or just the name of that file.", type=str)
+    parser.add_argument("file_path", help="The absolute path with name of the saved *jsonl file or just the name of "
+                                          "that file.", type=str)
     parser.add_argument("-NKJP_dir_path", help="The absolute path to the directory with NKJP corpora.",
                         default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
     args = parser.parse_args()

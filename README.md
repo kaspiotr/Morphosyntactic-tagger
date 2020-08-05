@@ -48,6 +48,8 @@ not to change the original structure of the project.
      * total number of paragraphs in NKJP corpora and constructed by MACA analyzer,  
      * total number of sentences in NKJP corpora and constructed by MACA analyzer,  
      * number of sentences that are tokenized in the same way by MACA analyzer as they are tokenized in NKJP corpora
+   Additionally there was added is_test_mode_on argument to the script that allows, if set to True, to generate *maca_output_marked_test* file used 
+   in tests. This argument is set to False by default.
  * **training.py**:
    * you can ran this script providing as it's first argument stratified 10 fold cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  

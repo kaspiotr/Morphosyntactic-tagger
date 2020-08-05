@@ -4,7 +4,8 @@ import os
 import xml.etree.ElementTree as ET
 from subprocess import Popen, PIPE
 from utils.classes import Paragraph, Sentence, Token
-from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, write_dict_from_xml_with_maca_output_to_jsonlines_file, serialize_maca_input_from_nkjp_jsonl
+from utils.handle_file_io_operations import fetch_maca_input_from_xml_files_in_directory, \
+    write_dict_from_xml_with_maca_output_to_jsonlines_file, serialize_maca_input_from_nkjp_jsonl
 
 
 ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
@@ -34,7 +35,8 @@ def parse_maca_input_from_xml_files_in_directory(file_path):
 
 def _maca(input, output_xml_file_path):
     """
-    Runs MACA analizer on a given by input parameter chunk of text and writes result to the file given by the output_xml_file_path parameter
+    Runs MACA analizer on a given by input parameter chunk of text and writes result to the file given by the
+    output_xml_file_path parameter
 
     :param input: str
         Plain text that is an input to the MACA analyzer
@@ -93,7 +95,8 @@ def create_xml_file_from_maca_output(jsonl_file_path, nkjp_dir_path, serialize_f
         if 'NKJP-PodkorpusMilionowy-1.2' not in os.listdir('/'.join(my_path.split('/')[:-2])):
             raise IOError(
                 "Contents of directory named NKJP-PodkorpusMilionowy-1.2 not found in the specified location.")
-        for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(parse_maca_input_from_xml_files_in_directory, my_path):
+        for (maca_input, nkjp_directory_id_with_paragraph_id) in fetch_maca_input_from_xml_files_in_directory(
+                parse_maca_input_from_xml_files_in_directory, my_path):
             _maca(maca_input, output_xml_file_path)
             yield nkjp_directory_id_with_paragraph_id
 
@@ -130,8 +133,8 @@ def parse_xml(file_path):
                         interps_base_form = subelement[0].text.split(':')[0]
                         morph_interp = subelement[1].text
                         token.add_proposed_tags(interps_base_form + ":" + morph_interp)
-                        token.add_base_form(interps_base_form)
-                        token.add_tag('num' if morph_interp == 'num:::' else morph_interp)
+                        token.add_base_form('ign')
+                        token.add_tag('ign')
             if element.tag == "sentence":
                 paragraph.add_sentence(sentence)
             if element.tag == "chunk":
@@ -141,9 +144,12 @@ def parse_xml(file_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved or just the name of that file.", type=str)
-    parser.add_argument("MACA_serialized_file", help="The absolute path to the *.jsonl file where data serialized from file given by argument NKJP_file_path will be saved.", type=str)
-    parser.add_argument("-NKJP_file_path", help="The path to the *.jsonl file where data serialized from NKJP corpora are stored.", type=str)
+    parser.add_argument("MACA_file", help="The absolute path to the *.jsonl file where data from MACA analyze based on "
+                                          "NKJP plain text will be saved or just the name of that file.", type=str)
+    parser.add_argument("MACA_serialized_file", help="The absolute path to the *.jsonl file where data serialized from "
+                                                     "file given by argument NKJP_file_path will be saved.", type=str)
+    parser.add_argument("-NKJP_file_path", help="The path to the *.jsonl file where data serialized from NKJP corpora "
+                                                "are stored.", type=str)
     parser.add_argument("-NKJP_dir_path", help="The absolute path to the directory with NKJP corpora.",
                         default='/resources/NKJP-PodkorpusMilionowy-1.2/', type=str)
     args = parser.parse_args()
