@@ -14,7 +14,6 @@ import math
 import numpy as np
 import re
 import errno
-import shutil
 import flair
 import torch
 import sys
@@ -411,9 +410,6 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                                   test_file='test_' + str(skf_split_no),
                                   dev_file=None)
     log.info(corpus)
-    # len(corpus.train)
-    # log.info(corpus.train[0].to_tagged_string('pos'))
-    # log.info("TRAIN:", train_index, "TEST:", test_index)
     # 2. what tag do we want to predict
     tag_type = 'pos'
     # 3. make the tag dictionary from the corpus
@@ -455,7 +451,7 @@ def train(skf_split_no, jsonl_file_path):
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
-    - proposed tags for given token.
+    - proposed tags for given token (taken from MACA analyzer).
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
     - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
@@ -514,10 +510,8 @@ def train(skf_split_no, jsonl_file_path):
         for train_index, test_index in skf.split(X, y):
             if iteration_no == skf_split_no:
                 log.info("Stratified 10 fold cross validation split number: %d" % iteration_no)
-                # log.info("Proposed tags dictionary before population: %s" % proposed_tags_dict)
                 _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
                 _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
-                # log.info("Proposed tags dictionary after population: %s" % proposed_tags_dict)
                 total_proposed_tags_no = 0
                 for tag in proposed_tags_dict:
                     total_proposed_tags_no += proposed_tags_dict[tag]
