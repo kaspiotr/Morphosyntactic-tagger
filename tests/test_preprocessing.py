@@ -1,10 +1,13 @@
 import unittest
 import jsonlines
 
-maca_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl'
-maca_output_from_plain_nkjp_text_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
+maca_output_jsonl_file_path = \
+    '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl'
+maca_output_from_plain_nkjp_text_jsonl_file_path = \
+    '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl'
 nkjp_output_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl'
-maca_and_nkjp_output_merge_jsonl_file_path = '/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked_test.jsonl'
+maca_and_nkjp_output_merge_jsonl_file_path = \
+    '/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked_test.jsonl'
 
 
 class TestPreprocessing(unittest.TestCase):
@@ -36,7 +39,8 @@ class TestPreprocessing(unittest.TestCase):
                 for sentence_json in paragraph_json['sentences']:
                     for token_json in sentence_json['sentence']:
                         if token_json['token']['base_form'] != 'ign':
-                            self.assertEqual('TEST_BASE_FORM', token_json['token']['base_form'], "base_form not set for token with id "
+                            self.assertEqual('TEST_BASE_FORM', token_json['token']['base_form'], "base_form not set "
+                                                                                                 "for token with id "
                                              + token_json['token']['id'])
                         if token_json['token']['tag'] != 'ign':
                             self.assertEqual('TEST_TAG', token_json['token']['tag'], "tag not set for token with id "
@@ -50,13 +54,42 @@ class TestPreprocessing(unittest.TestCase):
                         if token_json['token']['base_form'] == 'ign':
                             self.assertEqual(False, sentence_json['match'],
                                              "sentence with id " + sentence_json['id']
-                                             + " not set as not matching (as the one with different tokenisation than in NKJP) for token with id "
-                                             + token_json['token']['id'] + " although token's base_form is set to 'ign'")
+                                             + " not set as not matching (as the one with different tokenization than "
+                                               "in NKJP) for token with id "
+                                             + token_json['token']['id'] + " although token's base_form is set to "
+                                                                           "'ign'")
                         if token_json['token']['tag'] == 'ign':
                             self.assertEqual(False, sentence_json['match'],
                                              "sentence with id " + sentence_json['id']
-                                             + " not set as not matching (as the one with different tokenisation than in NKJP) for token with id "
+                                             + " not set as not matching (as the one with different tokenization than "
+                                               "in NKJP) for token with id "
                                              + token_json['token']['id'] + " although token's tag is set to 'ign'")
+
+    def test_maca_and_nkjp_output_merge__create__all_sentences_with_base_form_and_tag_different_to_ign_marked_as_tokenised_in_maca_and_nkjp_alike(self):
+        with jsonlines.open(maca_and_nkjp_output_merge_jsonl_file_path) as reader:
+            for paragraph_json in reader:
+                for sentence_json in paragraph_json['sentences']:
+                    is_sentence_tokenized_the_same_in_maca_as_in_nkjp_base_form = True
+                    is_sentence_tokenized_the_same_in_maca_as_in_nkjp_tag = True
+                    token_with_ign_base_form_id = ''
+                    token_with_ign_tag_id = ''
+                    for token_json in sentence_json['sentence']:
+                        if sentence_json['match'] and token_json['token']['base_form'] == 'ign':
+                            is_sentence_tokenized_the_same_in_maca_as_in_nkjp_base_form = False
+                            token_with_ign_base_form_id = token_json['token']['id']
+                        if sentence_json['match'] and token_json['token']['tag'] == 'ign':
+                            is_sentence_tokenized_the_same_in_maca_as_in_nkjp_tag = False
+                            token_with_ign_tag_id = token_json['token']['id']
+                    self.assertEqual(True, is_sentence_tokenized_the_same_in_maca_as_in_nkjp_base_form,
+                                     "sentence with id " + sentence_json['id']
+                                     + " although set as matching (as the one with the same tokenization in MACA as in "
+                                       "NKJP) for token with id " + token_with_ign_base_form_id
+                                     + " token's base_form is set to 'ign'")
+                    self.assertEqual(True, is_sentence_tokenized_the_same_in_maca_as_in_nkjp_tag,
+                                     "sentence with id " + sentence_json['id']
+                                     + " although set as matching (as the one with the same tokenization in MACA as in "
+                                       "NKJP) for token with id " + token_with_ign_tag_id
+                                     + " token's tag is set to 'ign'")
 
     def test_maca_output_serialized_from_nkjp__create__all_base_form_and_tags_are_set_as_ign(self):
         with jsonlines.open(maca_output_jsonl_file_path) as reader:

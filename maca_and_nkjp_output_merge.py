@@ -233,11 +233,13 @@ def merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, 
         maca_json['sentences'][sentence_no]['match'] = False
     for maca_token_json, nkjp_token_json in zip_corresponding_maca_and_nkjp_tokens(maca_json, sentence_no, list(map(get_token, maca_json['sentences'][sentence_no]['sentence'])), read_nkjp_tokens_buffer):
         if is_test_mode_on:
-            maca_token_json['base_form'] = 'TEST_BASE_FORM'
-            maca_token_json['tag'] = 'TEST_TAG'
+            if maca_token_json['changed_form'] == nkjp_token_json['changed_form']:
+                maca_token_json['base_form'] = 'TEST_BASE_FORM'
+                maca_token_json['tag'] = 'TEST_TAG'
         else:
-            maca_token_json['base_form'] = nkjp_token_json['base_form']
-            maca_token_json['tag'] = nkjp_token_json['tag']
+            if maca_token_json['changed_form'] == nkjp_token_json['changed_form']:
+                maca_token_json['base_form'] = nkjp_token_json['base_form']
+                maca_token_json['tag'] = nkjp_token_json['tag']
     read_nkjp_tokens_buffer.clear()
 
 
@@ -301,7 +303,7 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mo
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
             if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
-                maca_json['sentences'][sentence_no]['match'] = True
+                merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on)
                 matching_sentences_no += 1
                 sentence_no += 1
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
