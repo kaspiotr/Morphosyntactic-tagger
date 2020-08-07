@@ -122,3 +122,6 @@ testdata/
 # test and dev files used in training
 data/
 
+# corpus2 library
+corpus2/
+

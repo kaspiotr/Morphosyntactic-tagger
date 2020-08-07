@@ -70,7 +70,8 @@ class Token:
             if base_form_with_tag is None:
                 continue
             base_form = base_form_with_tag.split(":")[0]
-            tag = ":".join(base_form_with_tag.split(":")[1:])
+            list_without_empty_strings = list(filter(lambda x: x != "", base_form_with_tag.split(":")[1:]))
+            tag = ":".join(list_without_empty_strings)
             proposed_tag = {}
             proposed_tag["base_form"] = base_form
             proposed_tag["tag"] = tag
