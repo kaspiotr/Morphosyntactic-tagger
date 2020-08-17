@@ -307,7 +307,8 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mo
                 matching_sentences_no += 1
                 sentence_no += 1
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
-    if nkjp_paragraph_str == maca_paragraph_str:  # mark last MACA sentence as tagged alike as it is done in NKJP
+    if nkjp_paragraph_str == maca_paragraph_str:
+        #  mark the last sentence of the MACA buffer as tokenized as in the NKJP
         merge_maca_and_nkjp_tokens(maca_json, -1, read_nkjp_tokens_buffer, is_test_mode_on)
         if not was_sentence_counted_as_matching:
             matching_sentences_no += 1
