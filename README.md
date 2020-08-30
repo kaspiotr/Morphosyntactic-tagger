@@ -56,8 +56,10 @@ not to change the original structure of the project.
     - No. of sentences with the same tokenization between the NKJP and the MACA: *79049*
     - No. of sentences with different tokenization between the NKJP and the MACA: *2398*
     - Total no. of MACA tokens: *1218612*
-    - No. of MACA tokens with tag and base_form set from the NKJP corpora: *1205065*
+    - No. of MACA tokens with tag and base_form set from the NKJP corpora: *1204253*
     - No. of MACA tokens with 'ign' tag and base_form: *13547*
+    - No. of MACA tokens with 'ign' tag and base_form set from the NKJP: *812*
+    - No. of MACA tokens with 'ign' base_form and tag set from the NKJP: *0*
  * **training.py**:
    * you can ran this script providing as it's first argument stratified 10 fold cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
