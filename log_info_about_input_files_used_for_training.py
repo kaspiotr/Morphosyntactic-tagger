@@ -15,6 +15,9 @@ def log_info_from_maca_and_nkjp_output_merge_jsonl_file(maca_and_nkjp_output_mer
      - how many tokens have base_form and tag taken from the NKJP corpora
      - how many tokens have base_form and tag set to 'ign' (it was impossible to
        take base_form and tag for them from the NKJP corpora)
+     - how many tokens have base_form set to 'ign' and tag taken from NKJP corpora
+     - how many tokens hava tag set to 'ign' and base_form taken from NKJP corpora (generally those tokens have set
+       'xxx' tag in NKJP corpora)
     and writes those information in maca_and_nkjp_tokens_merge_info.log file in output directory of this project
 
     :param nkjp_output_jsonl_file_path: str
@@ -31,6 +34,8 @@ def log_info_from_maca_and_nkjp_output_merge_jsonl_file(maca_and_nkjp_output_mer
         maca_sentences_with_the_same_tokenization_as_in_nkjp_no = 0
         maca_sentences_with_different_tokenization_than_in_nkjp_no = 0
         total_maca_tokens_no = 0
+        tokens_with_ign_tag_no = 0
+        tokens_with_ign_base_form_no = 0
         tokens_with_ign_tag_and_base_form_no = 0
         tokens_with_tag_and_base_form_set_from_nkjp_no = 0
         for paragraph_json in reader:
@@ -42,8 +47,12 @@ def log_info_from_maca_and_nkjp_output_merge_jsonl_file(maca_and_nkjp_output_mer
                     maca_sentences_with_different_tokenization_than_in_nkjp_no += 1
                 for token_json in sentence_json['sentence']:
                     total_maca_tokens_no += 1
-                    if token_json['token']['tag'] == 'ign':
+                    if token_json['token']['tag'] == 'ign' and token_json['token']['base_form'] == 'ign':
                         tokens_with_ign_tag_and_base_form_no += 1
+                    elif token_json['token']['tag'] == 'ign' and token_json['token']['base_form'] != 'ign':
+                        tokens_with_ign_tag_no += 1
+                    elif token_json['token']['tag'] != 'ign' and token_json['token']['base_form'] == 'ign':
+                        tokens_with_ign_base_form_no += 1
                     else:
                         tokens_with_tag_and_base_form_set_from_nkjp_no += 1
         log.info("Total no. of MACA sentences: %s" % total_maca_sentences_no)
@@ -56,6 +65,10 @@ def log_info_from_maca_and_nkjp_output_merge_jsonl_file(maca_and_nkjp_output_mer
                  % tokens_with_tag_and_base_form_set_from_nkjp_no)
         log.info("No. of MACA tokens with 'ign' tag and base_form: %s"
                  % tokens_with_ign_tag_and_base_form_no)
+        log.info("No. of MACA tokens with 'ign' tag and base_form set from the NKJP: %s"
+                 % tokens_with_ign_tag_no)
+        log.info("No. of MACA tokens with 'ign' base_form and tag set from the NKJP: %s"
+                 % tokens_with_ign_base_form_no)
 
 
 def main():

@@ -49,7 +49,7 @@ def parse_xml(file_path):
                 if element.get('name') == "disamb":
                     disamb_base_form_with_tag = element[0][1][0].text.split(":")
                     token.add_base_form(disamb_base_form_with_tag[0])
-                    token.add_tag(":".join(disamb_base_form_with_tag[1:]))
+                    token.add_tag(Token.replace_xxx_tag_with_ign(":".join(disamb_base_form_with_tag[1:])))
             if element.tag == ns.get('cor') + 's':
                 paragraph.add_sentence(sentence)
             if element.tag == ns.get('cor') + 'p':

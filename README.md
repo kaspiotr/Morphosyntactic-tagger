@@ -56,8 +56,10 @@ not to change the original structure of the project.
     - No. of sentences with the same tokenization between the NKJP and the MACA: *79049*
     - No. of sentences with different tokenization between the NKJP and the MACA: *2398*
     - Total no. of MACA tokens: *1218612*
-    - No. of MACA tokens with tag and base_form set from the NKJP corpora: *1205065*
+    - No. of MACA tokens with tag and base_form set from the NKJP corpora: *1204253*
     - No. of MACA tokens with 'ign' tag and base_form: *13547*
+    - No. of MACA tokens with 'ign' tag and base_form set from the NKJP: *812*
+    - No. of MACA tokens with 'ign' base_form and tag set from the NKJP: *0*
  * **training.py**:
    * you can ran this script providing as it's first argument stratified 10 fold cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
@@ -66,3 +68,6 @@ not to change the original structure of the project.
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
    If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`
+ * **convert_tsv_to_xml.py**:
+   This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
+   Files *test_n.xml* are saved in resources directory of this project.
