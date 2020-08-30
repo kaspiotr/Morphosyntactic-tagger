@@ -2,7 +2,6 @@ import csv
 import os
 import glob
 import sys
-import re
 import xml.etree.ElementTree as ET
 
 
@@ -52,7 +51,7 @@ def _create_orth_and_lex_objects(token_data, token_object):
     ctag = ET.SubElement(lex, 'ctag')
     orth.text = token_data.split(' ')[0]
     base.text = token_data.split(' ')[0]
-    ctag.text = re.sub("num:::", "ign", token_data.split(' ')[1])
+    ctag.text = token_data.split(' ')[1]
 
 
 def convert_tsv_to_xml(tsv_file_path):
@@ -62,7 +61,7 @@ def convert_tsv_to_xml(tsv_file_path):
     xml_doc.set("xmlns:xlink", "http://www.w3.org/1999/xlink")
     chunk_list = ET.SubElement(xml_doc, 'chunkList')
     paragraph = ET.SubElement(chunk_list, 'chunk', type='p')
-    create_xml_file(paragraph)
+    create_xml_file(paragraph, split_no)
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
@@ -74,19 +73,29 @@ def convert_tsv_to_xml(tsv_file_path):
         xf.write(file)
 
 
-def create_xml_file(paragraph_object):
-    for sentence_data in read_sentence_from_tsv():
+def create_xml_file(paragraph_object, skf_split_no):
+    for sentence_data in read_sentence_from_tsv(skf_split_no):
         sentence_object = ET.SubElement(paragraph_object, 'chunk', type='s')
         _create_token_object(sentence_data, sentence_object)
 
 
-def read_sentence_from_tsv():
-    with open("resources/taggers/example-pos/it-2/test.tsv") as fd:
+def read_sentence_from_tsv(skf_split_no):
+    with open("resources/taggers/example-pos/it-" + skf_split_no + "/test.tsv") as fd:
         rd = csv.reader(fd, delimiter="\t")
         sentence = []
         for row in rd:
             if row:
-                sentence.append(row[0])
+                concatenated_sentences_list = row[0].split("\n\n")
+                first_from_concatenated_sentences = True
+                for sentence_string in concatenated_sentences_list:
+                    concatenated_rows_list = sentence_string.split("\n")
+                    for single_row in concatenated_rows_list:
+                        sentence.append(single_row)
+                    if not first_from_concatenated_sentences:
+                        if sentence[0] != '':
+                            yield sentence
+                        sentence.clear()
+                    first_from_concatenated_sentences = False
             else:
                 yield sentence
                 sentence.clear()
