@@ -16,8 +16,7 @@ def log_info_from_maca_and_nkjp_output_merge_jsonl_file(maca_and_nkjp_output_mer
      - how many tokens have base_form and tag set to 'ign' (it was impossible to
        take base_form and tag for them from the NKJP corpora)
      - how many tokens have base_form set to 'ign' and tag taken from NKJP corpora
-     - how many tokens hava tag set to 'ign' and base_form taken from NKJP corpora (generally those tokens have set
-       'xxx' tag in NKJP corpora)
+     - how many tokens have tag set to 'ign' and base_form taken from NKJP corpora
     and writes those information in maca_and_nkjp_tokens_merge_info.log file in output directory of this project
 
     :param nkjp_output_jsonl_file_path: str
