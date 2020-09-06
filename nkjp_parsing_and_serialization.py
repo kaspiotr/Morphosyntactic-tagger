@@ -11,22 +11,16 @@ ns = {'cor': '{http://www.tei-c.org/ns/1.0}',
 
 def correct_nkjp_base_form_and_tag_format(base_form_with_tag):
     if re.fullmatch(r"[a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\"\'!?.,;\-\s„”–()&*…—§’/ü\[\]+­“°%é=ôòéëä•ţ@‘ö×·$_{}«»~èàášíúČ#¨˝ý><ÉŢő−č|`řñç^âêōěßû]+(:[a-z0-9]+)*", base_form_with_tag) is None:
-        if base_form_with_tag.startswith(":-)") or base_form_with_tag.startswith(":-D") \
-                or base_form_with_tag.startswith(":-(") or base_form_with_tag.startswith(":-/") \
-                or base_form_with_tag.startswith(":o)") or base_form_with_tag.startswith(":o("):
-            base_form = base_form_with_tag[0:3]
-            tag = base_form_with_tag[4:]
-            return base_form, tag
-        if base_form_with_tag.startswith(":)") or base_form_with_tag.startswith(":\\") \
-                or base_form_with_tag.startswith("(:") or base_form_with_tag.startswith(":D") \
-                or base_form_with_tag.startswith(":O") or base_form_with_tag.startswith(":(") \
-                or base_form_with_tag.startswith(":]") or base_form_with_tag.startswith(":P") \
-                or base_form_with_tag.startswith(":|"):
-            base_form = base_form_with_tag[0:2]
-            tag = base_form_with_tag[3:]
-            return base_form, tag
         if base_form_with_tag == '::interp':
             return ':', 'interp'
+        if re.findall("^:[-]?[DOP\/]:", base_form_with_tag):
+            tag = ":".join(re.search('[a-z0-9A-Z\/]+(:[a-z0-9]+)*$', base_form_with_tag).group().split(':')[1:])
+            base_form = base_form_with_tag[0:len(base_form_with_tag) - len(tag) - 1]
+            return base_form, tag
+        if re.findall("^[:(][-oP]?[\/()\\|\]:]?", base_form_with_tag):
+            tag = re.search('[a-z0-9A-Z\/]+(:[a-z0-9]+)*$', base_form_with_tag).group()
+            base_form = base_form_with_tag[0:len(base_form_with_tag) - len(tag) - 1]
+            return base_form, tag
         if re.findall("\s*http://", base_form_with_tag) or re.findall("news:", base_form_with_tag):
             tag = ":".join(re.search('[a-z0-9A-Z\/]+(:[a-z0-9]+)*$', base_form_with_tag).group().split(':')[1:])
             base_form = base_form_with_tag[0:len(base_form_with_tag) - len(tag) - 1]
