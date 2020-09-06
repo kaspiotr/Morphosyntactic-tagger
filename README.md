@@ -68,6 +68,6 @@ not to change the original structure of the project.
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
    If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`
- * **convert_tsv_to_xml.py**:
+ * **convert_tsv_to_xml.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
    Files *test_n.xml* are saved in resources directory of this project.

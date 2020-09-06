@@ -74,10 +74,6 @@ class Token:
             tag = ":".join(list_without_empty_strings)
             proposed_tag = {}
             proposed_tag["base_form"] = base_form
-            proposed_tag["tag"] = Token.replace_xxx_tag_with_ign(tag)
+            proposed_tag["tag"] = tag
             token_dict["token"]["proposed_tags"].append(proposed_tag)
         return token_dict
-
-    @staticmethod
-    def replace_xxx_tag_with_ign(tag):
-        return tag if tag != 'xxx' else 'ign'
