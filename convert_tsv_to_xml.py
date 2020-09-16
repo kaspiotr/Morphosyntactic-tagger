@@ -51,7 +51,7 @@ def _create_orth_and_lex_objects(token_data, token_object):
     ctag = ET.SubElement(lex, 'ctag')
     orth.text = token_data.split(' ')[0]
     base.text = token_data.split(' ')[0]
-    ctag.text = token_data.split(' ')[1]
+    ctag.text = token_data.split(' ')[2]
 
 
 def convert_tsv_to_xml(tsv_file_path):
