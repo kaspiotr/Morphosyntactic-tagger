@@ -100,7 +100,7 @@ def log_info_from_maca_and_nkjp_jsonl_files(nkjp_output_jsonl_file_path, maca_ou
 
 
 def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_path, maca_output_jsonl_file_path,
-                     is_test_mode_on):
+                     is_test_mode_on, get_nkjp_proposed_tags):
     """
     Populates buffers used in align algorithm and logs information about number of sentences that have been
     tokenized by MACA analyzer in the same way that they are tokenized in NKJP corpora
@@ -128,6 +128,8 @@ def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_
     if len(maca_output_marked_jsonl_file_path.split('/')) == 1:
         maca_output_marked_jsonl_file_path = os.path.abspath(
             os.path.dirname(os.path.abspath(__file__))) + '/output/' + maca_output_marked_jsonl_file_path
+        if not is_test_mode_on and get_nkjp_proposed_tags:
+            maca_output_marked_jsonl_file_path += '_with_nkjp_proposed_tags'
         if is_test_mode_on:
             maca_output_marked_jsonl_file_path += '_test'
     if nkjp_output_jsonl_file_path is None:
@@ -156,7 +158,7 @@ def populate_buffers(maca_output_marked_jsonl_file_path, nkjp_output_jsonl_file_
                 log.info("NKJP list length: %s" % len(nkjp_paragraph_buffer))
             paragraph_no += 1
             matching_sentences_no = align(maca_json, nkjp_paragraph_buffer, maca_paragraph_buffer,
-                                          matching_sentences_no, is_test_mode_on)
+                                          matching_sentences_no, is_test_mode_on, get_nkjp_proposed_tags)
             maca_writer.write(maca_json)
     log.info("\n=============================")
     log.info("Number of sentences that match between NKJP and MACA: %d" % matching_sentences_no)
@@ -228,7 +230,8 @@ def zip_corresponding_maca_and_nkjp_tokens(maca_json, sentence_no, maca_tokens_l
             maca_json['sentences'][sentence_no]['match'] = False
 
 
-def merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on):
+def merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on,
+                               get_nkjp_proposed_tags):
     if len(maca_json['sentences'][sentence_no]['sentence']) != len(read_nkjp_tokens_buffer):
         maca_json['sentences'][sentence_no]['match'] = False
     for maca_token_json, nkjp_token_json in zip_corresponding_maca_and_nkjp_tokens(maca_json, sentence_no, list(map(get_token, maca_json['sentences'][sentence_no]['sentence'])), read_nkjp_tokens_buffer):
@@ -240,10 +243,17 @@ def merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, 
             if maca_token_json['changed_form'] == nkjp_token_json['changed_form']:
                 maca_token_json['base_form'] = nkjp_token_json['base_form']
                 maca_token_json['tag'] = nkjp_token_json['tag']
+                if get_nkjp_proposed_tags:
+                    nkjp_proposed_tags = nkjp_token_json['proposed_tags']
+                    for idx, nkjp_proposed_tag in enumerate(nkjp_proposed_tags):
+                        if nkjp_proposed_tag['tag'] == nkjp_token_json['tag'] \
+                                and nkjp_proposed_tag['base_form'] == nkjp_token_json['base_form']:
+                            del nkjp_proposed_tags[idx]
+                    maca_token_json['proposed_tags'] = nkjp_proposed_tags
     read_nkjp_tokens_buffer.clear()
 
 
-def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mode_on):
+def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mode_on, get_nkjp_proposed_tags):
     """
     Align algorithm that marks similarities between NKJP and MACA analyzer output POS tagging
     This method also logs information about differences between NKJP and MACA in a file tagging_diffs.log in resources
@@ -286,7 +296,8 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mo
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
             if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
-                merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on)
+                merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on,
+                                           get_nkjp_proposed_tags)
                 matching_sentences_no += 1
                 sentence_no += 1
             nkjp_token = nkjp_buffer.pop(0)
@@ -303,20 +314,22 @@ def align(maca_json, nkjp_buffer, maca_buffer, matching_sentences_no, is_test_mo
             prev_maca_token = curr_maca_token
             curr_maca_token = maca_buffer.pop(0)
             if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
-                merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on)
+                merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on,
+                                           get_nkjp_proposed_tags)
                 matching_sentences_no += 1
                 sentence_no += 1
             maca_paragraph_str = append_token(maca_paragraph_str, curr_maca_token)
     if nkjp_paragraph_str == maca_paragraph_str:
         #  mark the last sentence of the MACA buffer as tokenized as in the NKJP
-        merge_maca_and_nkjp_tokens(maca_json, -1, read_nkjp_tokens_buffer, is_test_mode_on)
+        merge_maca_and_nkjp_tokens(maca_json, -1, read_nkjp_tokens_buffer, is_test_mode_on, get_nkjp_proposed_tags)
         if not was_sentence_counted_as_matching:
             matching_sentences_no += 1
             was_sentence_counted_as_matching = True
         else:
             log.info("Sentence with id %s was counted already!" % maca_json['sentences'][sentence_no]['id'])
     if prev_maca_token is not None and prev_maca_token['id'].split('-')[-2] != curr_maca_token['id'].split('-')[-2]:
-        merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on)
+        merge_maca_and_nkjp_tokens(maca_json, sentence_no, read_nkjp_tokens_buffer, is_test_mode_on,
+                                   get_nkjp_proposed_tags)
         if not was_sentence_counted_as_matching:
             matching_sentences_no += 1
         else:
@@ -335,13 +348,17 @@ def main():
                                            "corpora are stored.", type=str)
     parser.add_argument("-MACA_file", help="The absolute path to the *.jsonl file where data serialized from MACA "
                                            "output are stored.", type=str)
-    parser.add_argument("-test_mode_on", help="Run script in test mode: True - yes, False -no. Default: no.", type=str,
+    parser.add_argument("-test_mode_on", help="Run script in test mode: True -yes, False -no. Default: no.", type=str,
                         default=False)
+    parser.add_argument("-get_NKJP_proposed_tags", help="Get proposed tags for tokens tokenized by MACA the same way as"
+                                                        " in NKJP from NKJP: True -yes, False -no", type=str,
+                        default=True)
 
     args = parser.parse_args()
     populate_dicts_with_id2pos_mapping(id2pos_in_nkjp_file, id2pos_in_maca_file, args.NKJP_file, args.MACA_file)
     log_info_from_maca_and_nkjp_jsonl_files(args.NKJP_file, args.MACA_file)
-    populate_buffers(args.MACA_marked_file, args.NKJP_file, args.MACA_file, args.test_mode_on)
+    populate_buffers(args.MACA_marked_file, args.NKJP_file, args.MACA_file, args.test_mode_on,
+                     args.get_NKJP_proposed_tags)
 
 
 if __name__ == '__main__':

@@ -12,13 +12,23 @@ from training import map_paragraph_id_to_text_category_name, write_to_file
 from nkjp_parsing_and_serialization import correct_nkjp_base_form_and_tag_format
 
 
+def _print_proposed_tags(proposed_tags_list):
+    if not proposed_tags_list:
+        return ' proposed_tags:'
+    proposed_tags_string = ""
+    for idx, proposed_tag in enumerate(proposed_tags_list):
+        proposed_tags_delimiter = ' proposed_tags:' if idx == 0 else '#|#'
+        proposed_tags_string += proposed_tags_delimiter + proposed_tag['base_form'] + '#=#' + proposed_tag['tag']
+    return proposed_tags_string
+
+
 def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destination_file_name):
     for paragraph_json_idx in paragraphs_indexes:
         for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
             for token in sentence["sentence"]:
                 token_json = token["token"]
                 write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["base_form"].strip()
-                              + " " + token_json["tag"] + "\n")
+                              + " " + token_json["tag"] + _print_proposed_tags(token_json["proposed_tags"]) + "\n")
             write_to_file(destination_file_name, "\n")
 
 
@@ -73,10 +83,22 @@ def _create_orth_and_lex_objects(token_data, token_object):
     lex = ET.SubElement(token_object, 'lex', disamb='1')
     base = ET.SubElement(lex, 'base')
     ctag = ET.SubElement(lex, 'ctag')
-    base_form, tag = correct_nkjp_base_form_and_tag_format(' '.join(token_data.split(' ')[1:-1]) + ":" + token_data.split(' ')[-1])
+    base_form_with_tag = token_data[0:token_data.find(' proposed_tags:')]
+    proposed_tags = token_data[token_data.find(' proposed_tags:') + 15:]
+    base_form, tag = correct_nkjp_base_form_and_tag_format(' '.join(base_form_with_tag.split(' ')[1:-1]) + ":" + base_form_with_tag.split(' ')[-1])
     orth.text = token_data.split(' ')[0]
     base.text = base_form
     ctag.text = tag
+    if proposed_tags != '':
+        for proposed_tag in proposed_tags.split(' ')[-1].split('#|#'):
+            if proposed_tag != '' and proposed_tag.find('num') == -1:
+                proposed_tag_lex = ET.SubElement(token_object, 'lex')
+                proposed_tag_base = ET.SubElement(proposed_tag_lex, 'base')
+                prepared_proposed_tag_tag = 'None' if proposed_tag.split('#=#')[0] == '' else proposed_tag.split('#=#')[0]
+                proposed_tag_base_form, proposed_tag_tag = correct_nkjp_base_form_and_tag_format(prepared_proposed_tag_tag + ":" + proposed_tag.split('#=#')[1])
+                proposed_tag_base.text = proposed_tag_base_form
+                proposed_tag_ctag = ET.SubElement(proposed_tag_lex, 'ctag')
+                proposed_tag_ctag.text = proposed_tag_tag
 
 
 def _create_token_object(sentence_data, sentence_object):
@@ -123,7 +145,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-file_path",
                         help="The absolute path with name of the saved *.jsonl file or just the name of that file.",
-                        default='/output/maca_output_marked',
+                        default='/output/maca_output_marked_with_nkjp_proposed_tags',
                         type=str)
     args = parser.parse_args()
     convert_nkjp_base_form_and_tag_to_ref_files(args.file_path)

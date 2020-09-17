@@ -46,6 +46,10 @@ def correct_nkjp_base_form_and_tag_format(base_form_with_tag):
             base_form = base_form_with_tag[0:2]
             tag = base_form_with_tag[3:]
             return base_form, tag
+        if base_form_with_tag == '\\:interp':
+            return '\\', 'interp'
+        if base_form_with_tag == '´:interp':
+            return '´', 'interp'
     else:
         base_form = base_form_with_tag.split(':')[0]
         tag = ":".join(base_form_with_tag.split(':')[1:])
