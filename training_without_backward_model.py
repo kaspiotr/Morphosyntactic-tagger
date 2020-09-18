@@ -98,7 +98,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     corpus: Corpus = ColumnCorpus(data_folder, columns,
                                   train_file='train_' + str(skf_split_no),
                                   test_file='test_' + str(skf_split_no),
-                                  dev_file=None).downsample(0.001)
+                                  dev_file=None)
     log.info(corpus)
     # 2. what tag do we want to predict
     tag_type = 'pos'
