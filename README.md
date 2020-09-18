@@ -36,7 +36,7 @@ not to change the original structure of the project.
  * **maca_and_nkjp_output_merge.py**:
    * You can run this script providing as it's first argument the absolute path to the *.jsonl with marked similarities in POS tagging between MACA output and NKJP corpora:  
    `python3 maca_and_nkjp_output_merge.py /home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl -NKJP_file='/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl' -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl`
-   * or you can run this script providing only the name of the output *.jsonl file and than it will be saved in the output directory of this project:
+   * or you can run this script providing only the name of the output *.jsonl file and than it will be saved in the output directory of this project:  
    `python3 maca_and_nkjp_output_merge.py maca_output_marked.jsonl -NKJP_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/nkjp_output.jsonl -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output_serialized_from_nkjp.jsonl`
    * If you saved your output *.jsonl file produced by script *nkjp_parsing_and_serialization.py* into *resources* directory of this project and named it *nkjp_output* than you do not have to specify the *NKJP_file* argument. You can simply run this script like that:  
    `python3 maca_and_nkjp_output_merge.py maca_output_marked -MACA_file=/home/kaspiotr/Dev/MorphosyntacticTagger/resources/maca_output.jsonl` 
@@ -64,11 +64,11 @@ not to change the original structure of the project.
    * you can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
    `python3 maca_and_nkjp_output_merge.py 1`  
-   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:
+   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:  
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
-   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
+   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:  
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
-   This script will train models for given (as a parameter) SKF split number. Data needed to train models need to be saved in _data_ folder of this project. Models will be saved in _resources_ directory of this project.
+   This script will train models for given (as a parameter) SKF split number. Data needed to train models need to be saved in _data_ folder of this project. Models will be saved in _resources_ directory of this project.  
    If you want to train models for all 10 SKF splits on _Prometheus_ at once use one of the scripts provided:  
      - [train_on_K40XL.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL.sh)
      - [train_on_V100.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100.sh)
@@ -84,10 +84,11 @@ not to change the original structure of the project.
    * you can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
    `python3 maca_and_nkjp_output_merge.py 1`  
-   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:
+   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:  
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
-   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
+   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:  
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
    This script will train models for given (as a parameter) SKF split number. This time backward model from _Flair_ will not be used in training. Data needed to train models need to be saved in _data_ folder of this project. Models will be saved in _resources_ directory of this project.  
+   If you want to train models for all 10 SKF splits on Prometheus at once use one of the scripts provided:  
      - [train_on_K40XL_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_1.sh)
      - [train_on_V100_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_1.sh)
