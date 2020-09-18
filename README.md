@@ -69,6 +69,9 @@ not to change the original structure of the project.
    If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
    This script will train models for given (as a parameter) SKF split number. Data needed to train models need to be saved in _data_ folder of this project. Models will be saved in _resources_ directory of this project.
+   If you want to train models for all 10 SKF splits on _Prometheus_ at once use one of the scripts provided:  
+   - [train_on_K40XL.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL.sh)
+   - [train_on_V100.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100.sh)
  * **convert_tsv_to_xml.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
    Files *test_n.xml* are saved in resources directory of this project.
@@ -85,3 +88,5 @@ not to change the original structure of the project.
    If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
    This script will train models for given (as a parameter) SKF split number. This time backward model from _Flair_ will not be used in training. Data needed to train models need to be saved in _data_ folder of this project. Models will be saved in _resources_ directory of this project.
+   - [train_on_K40XL_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_1.sh)
+   - [train_on_V100_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_1.sh)
