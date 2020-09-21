@@ -57,7 +57,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
     log.info(tag_dictionary)
     # 4. initialize embeddings
-    path_to_converted = os.path.dirname(os.path.abspath(__file__)) + "/fasttext_v2_converted"
+    path_to_converted = os.path.dirname(os.path.abspath(__file__)) + "/fasttext_v2_converted/fasttext_converted"
     embedding_types: List[TokenEmbeddings] = [
         WordEmbeddings(path_to_converted),
         CharacterEmbeddings()
