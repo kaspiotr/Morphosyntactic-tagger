@@ -93,12 +93,6 @@ not to change the original structure of the project.
      - [train_on_K40XL_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_1.sh)
      - [train_on_V100_ex_1.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_1.sh)
  * **training_experiment_2.py**:  
-   To perform this experiment you need to download polish FastText embeddings models available in this repository   
-   [polish-nlp-resources](https://github.com/sdadas/polish-nlp-resources#word-embeddings-and-language-models)  
-   (they can be downloaded from [here](https://drive.google.com/file/d/1yfReM7EJGL1vk2dNbyM7X10I6k6lJMuX/view)).
-   Then save them (the contents of the decompressed folder you've just downloaded) into the _fasttext_v2_ folder in the root directory of this project. Then create another folder called _fasttext_v2_converted_ in the root directory of this project and run script  
-   [convert_polish_fasttext_embeddings.py](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/convert_polish_fasttext_embeddings.py).
-   After that you can use script **training_experiment_2.py**:
    * you can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
    `python3 maca_and_nkjp_output_merge.py 1`  
