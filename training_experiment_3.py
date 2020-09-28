@@ -42,7 +42,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
       There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
       with a ';').
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
-    Model and training logs are saved in resources_ex_3/taggers/example-pos directory.
+    Model and training logs are saved in $SCRATCH/morphosyntactic-tagger/resources_ex_3/taggers/example-pos directory.
 
     :param data_folder: folder where files with column corpus split into column corpus is done
     :param proposed_tags_vocabulary_size: number of proposed tags
@@ -80,7 +80,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no),
+    trainer.train(os.environ['SCRATCH'] + '/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-' + str(skf_split_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -88,7 +88,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
+    plotter.plot_weights(os.environ['SCRATCH'] + '/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -117,7 +117,8 @@ def train(skf_split_no, jsonl_file_path):
       There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
       with a ';').
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
-    Model and training logs are saved in resources_ex_3/taggers/example-pos directory/it-<skf_split_no> (where
+    Model and training logs are saved in
+    $SCRATCH/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-<skf_split_no> directory (where
     <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
     Additionally method logs other training logs files and saves them in folder resources of this project under name
     training_ex_3_<skf_plit_no>.log
