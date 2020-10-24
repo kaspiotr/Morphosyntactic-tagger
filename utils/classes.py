@@ -1,3 +1,6 @@
+from utils.nkjp_corpora_utils import correct_nkjp_base_form_and_tag_format
+
+
 class Paragraph:
     def __init__(self, paragraph_tag):
         self.paragraph_id = ""
@@ -72,8 +75,9 @@ class Token:
             base_form = base_form_with_tag.split(":")[0]
             list_without_empty_strings = list(filter(lambda x: x != "", base_form_with_tag.split(":")[1:]))
             tag = ":".join(list_without_empty_strings)
+            corrected_base_form, corrected_tag = correct_nkjp_base_form_and_tag_format(base_form + ":" + tag)
             proposed_tag = {}
-            proposed_tag["base_form"] = base_form
-            proposed_tag["tag"] = tag
+            proposed_tag["base_form"] = corrected_base_form
+            proposed_tag["tag"] = corrected_tag
             token_dict["token"]["proposed_tags"].append(proposed_tag)
         return token_dict

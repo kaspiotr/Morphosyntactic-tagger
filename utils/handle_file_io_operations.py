@@ -95,7 +95,8 @@ def write_dict_from_xml_with_maca_output_to_jsonlines_file(paragraph_id, parsing
     :param parsing_generator: generator
         The generator that parses maca_out.xml file with output gained from MACA analyzer
     :param output_file_path: str
-        The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved or just the name of that file.
+        The absolute path to the *.jsonl file where data from MACA analyze based on NKJP plain text will be saved or
+        just the name of that file.
     :raises: IOError
         If file maca_out.xml is not found
     """
