@@ -1,8 +1,8 @@
 import re
 
 base_form_part_with_pos_tag_regex = '[a-z0-9A-Z\/]+(:[a-z0-9]+)*$'
-nkjp_pos_allowed_base_forms_regex = r"[a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\"\'!?.,;\-\s„”–()&*…—§’/ü\[\]+­“°%é=ôòéëä•ţ@‘ö×·$" \
-                                    r"_{}«»~èàášíúČ#¨˝ý><ÉŢő−č|`řñç^âêōěßû]+(:[a-z0-9]+)*"
+nkjp_pos_allowed_base_forms_regex = r"[a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\"\'!?.,;\-\s„”–()&*…—§’/ü\[\]+­“°%é=ôòéëä•ţ@‘ö×·$'" \
+                                    r"²Ñŕμ_{}«»~èàášíúČ#¨˝ý><ÉŢő−č|`řñç^âêōěßû]+(:[a-z0-9]+)*"
 nkjp_base_form_first_emoji_regex = "^:[-]?[DOP\/]:"
 nkjp_base_form_second_emoji_regex = "^[:(][-oP]?[\/()\\|\]:]?"
 nkjp_websites_base_forms_first_regex = "\s*http://"
@@ -18,8 +18,6 @@ def correct_nkjp_base_form_and_tag_format(base_form_with_tag):
     :return: tuple (str, str)
         A tuple of two strings: (base_form, tag)
     """
-    # if base_form_with_tag == ':D:subst:sg:nom:n':
-    #     return ':D', 'subst:sg:nom:n'
     if re.findall(':$', base_form_with_tag):
         base_form_with_tag = base_form_with_tag[0:-1]
     if re.fullmatch(nkjp_pos_allowed_base_forms_regex, base_form_with_tag) is None:
