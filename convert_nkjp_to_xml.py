@@ -4,6 +4,7 @@ import jsonlines
 import numpy as np
 import os
 import glob
+import re
 import sys
 import xml.etree.ElementTree as ET
 from convert_tsv_to_xml import prettify
@@ -14,10 +15,10 @@ from utils.nkjp_corpora_utils import correct_nkjp_base_form_and_tag_format
 
 def _print_proposed_tags(proposed_tags_list):
     if not proposed_tags_list:
-        return ' proposed_tags:'
+        return '#==#proposed_tags:'
     proposed_tags_string = ""
     for idx, proposed_tag in enumerate(proposed_tags_list):
-        proposed_tags_delimiter = ' proposed_tags:' if idx == 0 else '#|#'
+        proposed_tags_delimiter = '#==#proposed_tags:' if idx == 0 else '#|#'
         proposed_tags_string += proposed_tags_delimiter + proposed_tag['base_form'] + '#=#' + proposed_tag['tag']
     return proposed_tags_string
 
@@ -27,8 +28,8 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
         for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
             for token in sentence["sentence"]:
                 token_json = token["token"]
-                write_to_file(destination_file_name, token_json["changed_form"] + " " + token_json["base_form"].strip()
-                              + " " + token_json["tag"] + " " + str(token_json["separator"])
+                write_to_file(destination_file_name, token_json["changed_form"] + "#==#" + token_json["base_form"].strip()
+                              + "#==#" + token_json["tag"] + "#==#" + str(token_json["separator"])
                               + _print_proposed_tags(token_json["proposed_tags"]) + "\n")
             write_to_file(destination_file_name, "\n")
 
@@ -84,15 +85,15 @@ def _create_orth_and_lex_objects(token_data, token_object):
     lex = ET.SubElement(token_object, 'lex', disamb='1')
     base = ET.SubElement(lex, 'base')
     ctag = ET.SubElement(lex, 'ctag')
-    base_form_with_tag = token_data[0:token_data.find(' proposed_tags:')]
-    proposed_tags = token_data[token_data.find(' proposed_tags:') + 15:]
-    base_form, tag = correct_nkjp_base_form_and_tag_format(' '.join(base_form_with_tag.split(' ')[1:-2]) + ":" + base_form_with_tag.split(' ')[-2])
-    orth.text = token_data.split(' ')[0]
+    base_form_with_tag = token_data[0:token_data.find('#==#proposed_tags:')]
+    proposed_tags = token_data[token_data.find('#==#proposed_tags:') + 18:]
+    base_form, tag = correct_nkjp_base_form_and_tag_format(' '.join(base_form_with_tag.split('#==#')[1:-2]) + ":" + base_form_with_tag.split('#==#')[-2])
+    orth.text = token_data.split('#==#')[0]
     base.text = base_form
     ctag.text = tag
     if proposed_tags != '':
-        for proposed_tag in proposed_tags.split(' ')[-1].split('#|#'):
-            if proposed_tag != '' and proposed_tag.find('num') == -1:
+        for proposed_tag in proposed_tags.split('#==#')[-1].split('#|#'):
+            if re.match(r'^\s*$', proposed_tag) is None and proposed_tag.find('num') == -1:
                 if proposed_tag.split('#=#')[1] == 'ign':
                     proposed_tag_lex = ET.SubElement(token_object, 'lex')
                     proposed_tag_base = ET.SubElement(proposed_tag_lex, 'base')
@@ -105,7 +106,7 @@ def _create_orth_and_lex_objects(token_data, token_object):
 
 def _create_token_object(sentence_data, sentence_object):
     for token_data in sentence_data:
-        if token_data.split(' ')[3] == 'False':
+        if token_data.split('#==#')[3] == 'False':
             ET.SubElement(sentence_object, 'ns')
         token = ET.SubElement(sentence_object, 'tok')
         _create_orth_and_lex_objects(token_data, token)
