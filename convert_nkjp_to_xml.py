@@ -88,7 +88,7 @@ def _create_orth_and_lex_objects(token_data, token_object):
     base_form_with_tag = token_data[0:token_data.find('#==#proposed_tags:')]
     proposed_tags = token_data[token_data.find('#==#proposed_tags:') + 18:]
     base_form, tag = correct_nkjp_base_form_and_tag_format(' '.join(base_form_with_tag.split('#==#')[1:-2]) + ":" + base_form_with_tag.split('#==#')[-2])
-    orth.text = token_data.split('#==#')[0]
+    orth.text = token_data.split('#==#')[0].replace(' ', '').replace(u'\u00A0', '').replace('"S"', 'S')
     base.text = base_form
     ctag.text = tag
     if proposed_tags != '':
