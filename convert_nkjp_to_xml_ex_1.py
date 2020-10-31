@@ -129,7 +129,7 @@ def convert_nkjp_ref_to_xml(nkjp_ref_file_path):
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
-    with open("resources_1/nkjp_ref_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
+    with open("resources_ex_1/nkjp_ref_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
         doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
                'SYSTEM "xcesAnaIPI.dtd">\n'
         to_string = ET.tostring(root, encoding='utf-8').decode('utf-8')
