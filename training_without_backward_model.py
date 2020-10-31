@@ -131,7 +131,7 @@ def train(skf_split_no, jsonl_file_path):
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources/training_ex_1_' + str(skf_split_no) + '.log',
+    log.basicConfig(filename='resources_ex_1/training_ex_1_' + str(skf_split_no) + '.log',
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
