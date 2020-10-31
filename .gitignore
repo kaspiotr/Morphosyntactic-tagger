@@ -1,8 +1,11 @@
 .idea/
 venv/
 
-# resources file
+# resources files
 resources/
+resources_ex_1/
+resources_ex_2/
+resources_ex_3/
 
 ### Python template
 # Byte-compiled / optimized / DLL files
@@ -116,11 +119,13 @@ scripts_arguments.txt
 # output directory
 output/
 
-# test data
-testdata/
-
 # test and dev files used in training
 data/
+data_ex_1/
+data_ex_2/
+data_ex_3/
+
+# nkjp_data files used as reverence files in evaluation process
 
 # corpus2 library
 corpus2/
