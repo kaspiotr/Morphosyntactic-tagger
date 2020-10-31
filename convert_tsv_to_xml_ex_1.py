@@ -65,7 +65,7 @@ def convert_tsv_to_xml(tsv_file_path):
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
-    with open("resources/test_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
+    with open("resources_ex_1/test_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
         doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
                'SYSTEM "xcesAnaIPI.dtd">\n'
         to_string = ET.tostring(root, encoding='utf-8').decode('utf-8')
@@ -80,7 +80,7 @@ def create_xml_file(paragraph_object, skf_split_no):
 
 
 def read_sentence_from_tsv(skf_split_no):
-    with open("resources/taggers/example-pos/it-" + skf_split_no + "/test.tsv") as fd:
+    with open("resources_ex_1/taggers/example-pos/it-" + skf_split_no + "/test.tsv") as fd:
         rd = csv.reader(fd, delimiter="\t")
         sentence = []
         for row in rd:
@@ -102,7 +102,7 @@ def read_sentence_from_tsv(skf_split_no):
 
 
 def main():
-    path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/resources/taggers/example-pos/*/test.tsv"
+    path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/resources_ex_1/taggers/example-pos/*/test.tsv"
     tsv_files = glob.iglob(path)
     for tsv_file_path in tsv_files:
         convert_tsv_to_xml(tsv_file_path)

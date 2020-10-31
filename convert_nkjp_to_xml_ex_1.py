@@ -35,12 +35,12 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
 
 
 def convert_nkjp_base_form_and_tag_to_ref_files(nkjp_output_file_path):
-    if '/'.join(nkjp_output_file_path.split('/')[:-1]) == '/resources':
+    if '/'.join(nkjp_output_file_path.split('/')[:-1]) == '/resources_ex_1':
         file_name = nkjp_output_file_path.split('/')[-1]
-        nkjp_output_file = os.path.dirname(os.path.abspath(__file__)) + '/resources/' + file_name + '.jsonl'
+        nkjp_output_file = os.path.dirname(os.path.abspath(__file__)) + '/resources_ex_1/' + file_name + '.jsonl'
     else:
         nkjp_output_file = nkjp_output_file_path
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/nkjp_data'
+    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/nkjp_data_ex_1'
     with jsonlines.open(nkjp_output_file) as reader:
         skf = StratifiedKFold(n_splits=10, shuffle=False, random_state=None)
         text_category_to_number_of_elements = {}
@@ -59,7 +59,7 @@ def convert_nkjp_base_form_and_tag_to_ref_files(nkjp_output_file_path):
 
 
 def read_sentence_from_tsv(skf_split_no):
-    with open("nkjp_data/nkjp_ref_" + skf_split_no) as fd:
+    with open("nkjp_data_ex_1/nkjp_ref_" + skf_split_no) as fd:
         rd = csv.reader(fd, delimiter="\t")
         sentence = []
         for row in rd:
@@ -129,7 +129,7 @@ def convert_nkjp_ref_to_xml(nkjp_ref_file_path):
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
-    with open("resources/nkjp_ref_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
+    with open("resources_1/nkjp_ref_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
         doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
                'SYSTEM "xcesAnaIPI.dtd">\n'
         to_string = ET.tostring(root, encoding='utf-8').decode('utf-8')
@@ -138,7 +138,7 @@ def convert_nkjp_ref_to_xml(nkjp_ref_file_path):
 
 
 def convert_nkjp_to_xml():
-    path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/nkjp_data/*"
+    path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/nkjp_data_ex_1/*"
     nkjp_ref_files = glob.iglob(path)
     for nkjp_ref_file_path in nkjp_ref_files:
         convert_nkjp_ref_to_xml(nkjp_ref_file_path)
