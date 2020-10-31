@@ -35,9 +35,9 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
 
 
 def convert_nkjp_base_form_and_tag_to_ref_files(nkjp_output_file_path):
-    if '/'.join(nkjp_output_file_path.split('/')[:-1]) == '/resources_ex_1':
+    if '/'.join(nkjp_output_file_path.split('/')[:-1]) == '/resources':
         file_name = nkjp_output_file_path.split('/')[-1]
-        nkjp_output_file = os.path.dirname(os.path.abspath(__file__)) + '/resources_ex_1/' + file_name + '.jsonl'
+        nkjp_output_file = os.path.dirname(os.path.abspath(__file__)) + '/resources/' + file_name + '.jsonl'
     else:
         nkjp_output_file = nkjp_output_file_path
     data_folder = os.path.dirname(os.path.abspath(__file__)) + '/nkjp_data_ex_1'
