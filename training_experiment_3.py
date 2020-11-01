@@ -67,6 +67,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     embedding_types: List[TokenEmbeddings] = [
         WordEmbeddings('pl'),
         CharacterEmbeddings(),
+        OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
         OneHotEmbeddings(corpus=corpus, field='proposed_tags',
                          embedding_length=math.ceil((proposed_tags_vocabulary_size + 1) ** 0.25), min_freq=3)
     ]
@@ -80,7 +81,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train(os.environ['SCRATCH'] + '/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-' + str(skf_split_no),
+    trainer.train('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -88,7 +89,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights(os.environ['SCRATCH'] + '/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
+    plotter.plot_weights('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -117,8 +118,7 @@ def train(skf_split_no, jsonl_file_path):
       There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
       with a ';').
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
-    Model and training logs are saved in
-    $SCRATCH/morphosyntactic-tagger/resources_ex_3/taggers/example-pos/it-<skf_split_no> directory (where
+    Model and training logs are saved in resources_ex_3/taggers/example-pos directory/it-<skf_split_no> directory (where
     <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
     Additionally method logs other training logs files and saves them in folder resources of this project under name
     training_ex_3_<skf_plit_no>.log
@@ -128,7 +128,7 @@ def train(skf_split_no, jsonl_file_path):
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources/training_ex_3_' + str(skf_split_no) + '.log',
+    log.basicConfig(filename='resources_ex_3/training_ex_3_' + str(skf_split_no) + '.log',
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())

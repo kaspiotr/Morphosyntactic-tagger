@@ -126,4 +126,7 @@ not to change the original structure of the project.
    This script will train models for given (as a parameter) SKF split number. This time only static WordEmbeddings trained over Polish Wikipedia, CharacterEmbeddings and OneHotEmbeddingsEmbeddings (to encode information about proposed tags for each token) will be used in training. Data needed to train models need to be saved in _data_ex_3_ folder of this project. Models will be saved in _resources_ex_3_ directory of this project.  
    If you want to train models for all 10 SKF splits on Prometheus at once use one of the scripts provided:  
      - [train_on_K40XL_ex_3.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_3.sh)
-     - [train_on_V100_ex_3.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_3.sh)        
+     - [train_on_V100_ex_3.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_3.sh)  
+   * **convert_tsv_to_xml_ex_3.py**:  
+   This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
+   Files *test_n.xml* are saved in _resources_ex_3_ directory of this project.          
