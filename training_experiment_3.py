@@ -40,7 +40,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
       differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
       the most common words seen in the corpus, plus an UNK token for all rare words.
       There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
-      with a ';').
+      with a ';') and appearance of separator before each token.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in $SCRATCH/morphosyntactic-tagger/resources_ex_3/taggers/example-pos directory.
 
@@ -56,7 +56,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     corpus: Corpus = ColumnCorpus(data_folder, columns,
                                   train_file='train_' + str(skf_split_no),
                                   test_file='test_' + str(skf_split_no),
-                                  dev_file=None).downsample(0.001)
+                                  dev_file=None)
     log.info(corpus)
     # 2. what tag do we want to predict
     tag_type = 'pos'
@@ -116,7 +116,7 @@ def train(skf_split_no, jsonl_file_path):
       differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
       the most common words seen in the corpus, plus an UNK token for all rare words.
       There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
-      with a ';').
+      with a ';') and appearance of separator before each token.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_3/taggers/example-pos directory/it-<skf_split_no> directory (where
     <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
