@@ -27,7 +27,6 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     - proposed tags for given token.
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
-
     - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
       information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
       explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
@@ -44,14 +43,15 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
       - second to embed information about concatenated with a ';' proposed tags.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_4/taggers/example-pos/it-<skf_split_no> directory (where
-    <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
+    <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
     This is the method where internal states of forward and backward Flair models are taken at the end of each token
     and, supplemented by information about occurrence of separator before token and proposed tags for given token used
     to train model for one of stratified 10 fold cross validation splits.
-    Additionally method logs other training logs files and saves them in resources_ex_4 directory of this project under
-    name training_ex_4_<skf_plit_no>.log
+    Additionally method logs other training log files and saves them in the resources_ex_4 directory of this project
+    under the name training_ex_4_<skf_plit_no>.log
 
-    :param data_folder: folder where files with column corpus split into column corpus is done
+    :param data_folder: folder where files with column corpus split are stored. Those columns are used to initialize
+    ColumnCorpus object
     :param proposed_tags_vocabulary_size: number of proposed tags
     :param skf_split_no: number that indicates one of stratified 10 fold cross validation splits (from range 1 to 10)
     used to train the model
@@ -76,7 +76,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
         OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
         OneHotEmbeddings(corpus=corpus, field='proposed_tags',
-                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25), min_freq=3)
+                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25),
+                         min_freq=3)
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
@@ -104,7 +105,7 @@ def train(skf_split_no, jsonl_file_path):
     """
     Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
     each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
-    of samples for each class).
+    of samples for each class). Each model consists of 2 RRN layers.
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
@@ -127,9 +128,9 @@ def train(skf_split_no, jsonl_file_path):
       - second to embed information about concatenated with a ';' proposed tags.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_4/taggers/example-pos directory/it-<skf_split_no> (where
-    <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
-    Additionally method logs other training logs files and saves them in resoruces_ex_4 directory of this project under
-    name training_ex_4_<skf_plit_no>.log
+    <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
+    Additionally method logs other training log files and saves them in the resoruces_ex_4 directory of this project
+    under the name training_ex_4_<skf_plit_no>.log
 
     :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
 

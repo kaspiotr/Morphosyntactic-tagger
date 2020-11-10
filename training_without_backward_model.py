@@ -20,14 +20,13 @@ import sys
 
 def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, skf_split_no):
     """
-    Trains the sequence labeling model.
+    Trains the sequence labeling model (by default model uses one RNN layer).
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
     - proposed tags for given token.
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
-
     - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
       information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
       explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
@@ -44,11 +43,12 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
       - first to embed information about occurrence of separator before token,
       - second to embed information about concatenated with a ';' proposed tags.
     Model and training logs are saved in resources_ex_1/taggers/example-pos directory.
-    This is the method where internal states of forward and backward Flair models are taken at the end of each token
+    This is the method where internal state of forward Flair model is taken at the end of each token
     and, supplemented by information about occurrence of separator before token and proposed tags for given token used
     to train model for one of stratified 10 fold cross validation splits.
 
-    :param data_folder: folder where files with column corpus split into column corpus is done
+    :param data_folder: folder where files with column corpus split are stored. Those columns are used to initialize
+    ColumnCorpus object
     :param proposed_tags_vocabulary_size: number of proposed tags
     :param skf_split_no: number that indicates one of stratified 10 fold cross validation splits (from range 1 to 10)
     used to train the model
@@ -71,7 +71,9 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     embedding_types: List[TokenEmbeddings] = [
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
-        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25), min_freq=3)
+        OneHotEmbeddings(corpus=corpus, field='proposed_tags',
+                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25),
+                         min_freq=3)
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
@@ -79,7 +81,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                                             embeddings=embeddings,
                                             tag_dictionary=tag_dictionary,
                                             tag_type=tag_type,
-                                            use_crf=False)
+                                            use_crf=False,
+                                            rnn_layers=1)
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
@@ -98,7 +101,7 @@ def train(skf_split_no, jsonl_file_path):
     """
     Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
     each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
-    of samples for each class).
+    of samples for each class). Each model consists of 1 RNN layer.
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
@@ -122,9 +125,9 @@ def train(skf_split_no, jsonl_file_path):
       - second to embed information about concatenated with a ';' proposed tags.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_1/taggers/example-pos directory/it-<skf_split_no>
-    (where <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
-    Additionally method logs other training logs files and saves them in folder resources of this project under name
-    training_ex_1_<skf_plit_no>.log
+    (where <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
+    Additionally method logs other training log files and saves them in the resources_ex_1 directory of this project
+    under the name training_ex_1_<skf_split_no>.log
 
     :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
 

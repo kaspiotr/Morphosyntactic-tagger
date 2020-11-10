@@ -19,13 +19,14 @@ import sys
 
 def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, skf_split_no):
     """
-    Trains the sequence labeling model.
+    Trains the sequence labeling model (by default model uses one RNN layer).
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence).
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
-    - WordEmbeddings - classic word embeddings are static and word-level, meaning that each distinct word gets exactly
-      one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are used.
+    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
+      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
+      used.
     - CharacterEmbeddings - allow to add character-level word embeddings during model training. These embeddings are
       randomly initialized when the class is being initialized, so they are not meaningful unless they are trained on
       a specific downstream task. For instance, the standard sequence labeling architecture used by Lample et al. (2016)
@@ -37,8 +38,9 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_2/taggers/example-pos directory.
 
-    :param data_folder: folder where files with column corpus split into column corpus is done
-    :param proposed_tags_vocabulary_size: number of proposed tags
+    :param data_folder: folder where files with column corpus split are stored. Those columns are used to initialize
+    ColumnCorpus object
+    :param proposed_tags_vocabulary_size: number of proposed tags (not used here)
     :param skf_split_no: number that indicates one of stratified 10 fold cross validation splits (from range 1 to 10)
     used to train the model
     """
@@ -67,7 +69,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                                             embeddings=embeddings,
                                             tag_dictionary=tag_dictionary,
                                             tag_type=tag_type,
-                                            use_crf=False)
+                                            use_crf=False,
+                                            rnn_layers=1)
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
@@ -86,13 +89,14 @@ def train(skf_split_no, jsonl_file_path):
     """
     Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
     each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
-    of samples for each class).
+    of samples for each class). Each model consists of 1 RNN layer.
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence).
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
-    - WordEmbeddings - classic word embeddings are static and word-level, meaning that each distinct word gets exactly
-      one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are used.
+    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
+      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
+      used.
     - CharacterEmbeddings - allow to add character-level word embeddings during model training. These embeddings are
       randomly initialized when the class is being initialized, so they are not meaningful unless they are trained on
       a specific downstream task. For instance, the standard sequence labeling architecture used by Lample et al. (2016)
@@ -103,9 +107,9 @@ def train(skf_split_no, jsonl_file_path):
       a need to combine them with standard WordEmbeddings in an embedding stack.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources_ex_2/taggers/example-pos directory/it-<skf_split_no> (where
-    <skf_split_no> is the number of stratified 10 fold cross validation split number used to train the model).
-    Additionally method logs other training logs files and saves them in folder resources_ex_2 of this project under
-    name training_ex_2_<skf_plit_no>.log
+    <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
+    Additionally method logs other training log files and saves them in the resources_ex_2 directory of this project
+    under the name training_ex_2_<skf_split_no>.log
 
     :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
 

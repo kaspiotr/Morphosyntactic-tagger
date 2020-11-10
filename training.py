@@ -234,7 +234,8 @@ def map_first_section_of_nkjp_numbers_indeces(text_id, text_category):
     """
     Maps first three digits of NKJP corpora directory name into text category
 
-    :param text_id: NKJP corpora paragraph id (in format: <NKJP corpora directory id>+_+<no of paragraph in that directory>)
+    :param text_id: NKJP corpora paragraph id (in format:
+    <NKJP corpora directory id>+_+<no of paragraph in that directory>)
     :param text_category: name of NKJP corpora text category in a form of a string
     :return: name of NKJP corpora text category in a form of a string
     """
@@ -350,7 +351,8 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
                     token_json = token["token"]
                     unique_proposed_tags_list = _get_unique_list_of_proposed_tags(token_json["proposed_tags"])
                     sorted_proposed_tags_jsons_list = sorted(unique_proposed_tags_list, key=lambda pt: pt['tag'])
-                    joined_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"], sorted_proposed_tags_jsons_list))
+                    joined_proposed_tag = ";".join(map(lambda proposed_tag: proposed_tag["tag"],
+                                                       sorted_proposed_tags_jsons_list))
                     if joined_proposed_tag not in proposed_tags_dict:
                         proposed_tags_dict[joined_proposed_tag] = 1
                     else:
@@ -363,20 +365,21 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
     log.info("Total number of sentences in NKJP corpora: %s " % sentences_no)
     log.info("Total number of tokens in NKJP corpora: %s " % tokens_no)
     log.info("Length of proposed tags dictionary: %s" % len(proposed_tags_dict))
-    log.info("No. of sentences that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % sentences_that_match_no)
-    log.info("No. of tokens that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " % tokens_that_match_no)
+    log.info("No. of sentences that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " %
+             sentences_that_match_no)
+    log.info("No. of tokens that match in terms of tokenisation between NKJP corpora and MACA analyzer: %s " %
+             tokens_that_match_no)
 
 
 def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, skf_split_no):
     """
-    Trains the sequence labeling model.
+    Trains the sequence labeling model (by default model uses one RNN layer).
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
     - proposed tags for given token.
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of two vector embeddings:
-
     - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
       information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
       explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
@@ -396,7 +399,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     and, supplemented by information about occurrence of separator before token and proposed tags for given token used
     to train model for one of stratified 10 fold cross validation splits.
 
-    :param data_folder: folder where files with column corpus split into column corpus is done
+    :param data_folder: folder where files with column corpus split are stored. Those columns are used to initialize
+    ColumnCorpus object
     :param proposed_tags_vocabulary_size: number of proposed tags
     :param skf_split_no: number that indicates one of stratified 10 fold cross validation splits (from range 1 to 10)
     used to train the model
@@ -420,7 +424,9 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
         OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
-        OneHotEmbeddings(corpus=corpus, field='proposed_tags', embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25), min_freq=3)
+        OneHotEmbeddings(corpus=corpus, field='proposed_tags',
+                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25),
+                         min_freq=3)
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
@@ -428,7 +434,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                                             embeddings=embeddings,
                                             tag_dictionary=tag_dictionary,
                                             tag_type=tag_type,
-                                            use_crf=False)
+                                            use_crf=False,
+                                            rnn_layers=1)
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
@@ -447,7 +454,7 @@ def train(skf_split_no, jsonl_file_path):
     """
     Trains a sequence labeling model using stratified 10-fold cross-validation, which means that model is trained for
     each division of corpora into test and train data (dev data are sampled from train data) (preserving the percentage
-    of samples for each class).
+    of samples for each class). Each model consists of 1 RNN layer.
     Model is trained to predict part of speech tag and takes into account information about:
     - text (plain text made of tokens that together form a sentence),
     - occurrence of separator before token,
@@ -470,16 +477,17 @@ def train(skf_split_no, jsonl_file_path):
       - second to embed information about concatenated with a ';' proposed tags.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
     Model and training logs are saved in resources/taggers/example-pos directory/it-<skf_split_no> (where <skf_split_no>
-    is the number of stratified 10 fold cross validation split number used to train the model).
-    Additionally method logs other training logs files and saves them in folder resources of this project under name
-    training_<skf_plit_no>.log
+    is the number of stratified 10 fold cross validation split used to train the model).
+    Additionally method logs other training log files and saves them in the resources directory of this project under
+    the name training_<skf_split_no>.log
 
     :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
 
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources/training_' + str(skf_split_no) + '.log', format='%(levelname)s:%(message)s', level=log.INFO)
+    log.basicConfig(filename='resources/training_' + str(skf_split_no) + '.log', format='%(levelname)s:%(message)s',
+                    level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':

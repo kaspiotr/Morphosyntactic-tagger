@@ -1,6 +1,6 @@
 from flair.data import Corpus
 from flair.datasets import ColumnCorpus
-from flair.embeddings import StackedEmbeddings, TokenEmbeddings, CharacterEmbeddings, WordEmbeddings, OneHotEmbeddings
+from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings, OneHotEmbeddings, WordEmbeddings
 from flair.models import SequenceTagger
 from flair.trainers import ModelTrainer
 from flair.visual.training_curves import Plotter
@@ -27,26 +27,31 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     - proposed tags for given token.
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
     using a concatenation of three vector embeddings:
-    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
-      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
-      used.
-    - CharacterEmbeddings - allow to add character-level word embeddings during model training. These embeddings are
-      randomly initialized when the class is being initialized, so they are not meaningful unless they are trained on
-      a specific downstream task. For instance, the standard sequence labeling architecture used by Lample et al. (2016)
-      is a combination of classic word embeddings with task-trained character features. Normally this would require to
-      implement a hierarchical embedding architecture in which character-level embeddings for each word are computed
-      using an RNN and then concatenated with word embeddings. In Flair, this is simplified by treating
-      CharacterEmbeddings just like any other embedding class. To reproduce the Lample architecture, there is only
-      a need to combine them with standard WordEmbeddings in an embedding stack.
+    - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
+      information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
+      explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
+      contextualized by their surrounding text, meaning that the same word will have different embeddings depending on
+      its contextual use.
+      There are forward (that goes through the given on input plain text form left to right) and backward model (that
+      goes through the given on input plain text form right to left) used for part of speech (pos) tag training.
     - One Hot Embeddings - embeddings that encode each word in a vocabulary as a one-hot vector, followed by an
       embedding layer. These embeddings thus do not encode any prior knowledge as do most other embeddings. They also
       differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
       the most common words seen in the corpus, plus an UNK token for all rare words.
-      There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
-      with a ';') and appearance of separator before each token.
+      There are two One Hot Embeddings used in training:
+      - first to embed information about occurrence of separator before token,
+      - second to embed information about concatenated with a ';' proposed tags.
+    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
+      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
+      used.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
-    Model and training logs are saved in resources_ex_3/taggers/example-pos/it-<skf_split_no> directory (where
+    Model and training logs are saved in resources_ex_5/taggers/example-pos/it-<skf_split_no> directory (where
     <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
+    This is the method where internal states of forward and backward Flair models are taken at the end of each token
+    and, supplemented by information about occurrence of separator before token and proposed tags for given token used
+    to train model for one of stratified 10 fold cross validation splits.
+    Additionally method logs other training log files and saves them in the resources_ex_5 directory of this project
+    under the name training_ex_5_<skf_plit_no>.log
 
     :param data_folder: folder where files with column corpus split are stored. Those columns are used to initialize
     ColumnCorpus object
@@ -70,12 +75,13 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     log.info(tag_dictionary)
     # 4. initialize embeddings
     embedding_types: List[TokenEmbeddings] = [
-        WordEmbeddings('pl'),
-        CharacterEmbeddings(),
+        FlairEmbeddings('pl-forward', chars_per_chunk=64),
+        FlairEmbeddings('pl-backward', chars_per_chunk=64),
         OneHotEmbeddings(corpus=corpus, field='is_separator', embedding_length=3, min_freq=3),
         OneHotEmbeddings(corpus=corpus, field='proposed_tags',
-                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1) ** 0.25),
-                         min_freq=3)
+                         embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25),
+                         min_freq=3),
+        WordEmbeddings('pl')
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
@@ -88,7 +94,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no),
+    trainer.train('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -96,7 +102,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights('resources_ex_3/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
+    plotter.plot_weights('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -109,36 +115,36 @@ def train(skf_split_no, jsonl_file_path):
     - occurrence of separator before token,
     - proposed tags for given token (taken from MACA analyzer).
     It is trained with use of Stacked Embeddings used to combine different embeddings together. Words are embedded
-    using a concatenation of three vector embeddings:
-    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
-      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
-      used.
-    - CharacterEmbeddings - allow to add character-level word embeddings during model training. These embeddings are
-      randomly initialized when the class is being initialized, so they are not meaningful unless they are trained on
-      a specific downstream task. For instance, the standard sequence labeling architecture used by Lample et al. (2016)
-      is a combination of classic word embeddings with task-trained character features. Normally this would require to
-      implement a hierarchical embedding architecture in which character-level embeddings for each word are computed
-      using an RNN and then concatenated with word embeddings. In Flair, this is simplified by treating
-      CharacterEmbeddings just like any other embedding class. To reproduce the Lample architecture, there is only
-      a need to combine them with standard WordEmbeddings in an embedding stack.
+    using a concatenation of two vector embeddings:
+    - Flair Embeddings - contextual string embeddings that capture latent syntactic-semantic
+      information that goes beyond standard word embeddings. Key differences are: (1) they are trained without any
+      explicit notion of words and thus fundamentally model words as sequences of characters. And (2) they are
+      contextualized by their surrounding text, meaning that the same word will have different embeddings depending on
+      its contextual use.
+      There are forward (that goes through the given on input plain text form left to right) and backward model (that
+      goes through the given on input plain text form right to left) used for part of speech (pos) tag training.
     - One Hot Embeddings - embeddings that encode each word in a vocabulary as a one-hot vector, followed by an
       embedding layer. These embeddings thus do not encode any prior knowledge as do most other embeddings. They also
       differ in that they require to see a Corpus during instantiation, so they can build up a vocabulary consisting of
       the most common words seen in the corpus, plus an UNK token for all rare words.
-      There are one One Hot Embeddings used in training: to embed information about proposed tags (concatenated
-      with a ';') and appearance of separator before each token.
+      There are two One Hot Embeddings used in training:
+      - first to embed information about occurrence of separator before token,
+      - second to embed information about concatenated with a ';' proposed tags.
+    - WordEmbeddings - classic word embeddings. That kind of embeddings are static and word-level, meaning that each
+      distinct word gets exactly one pre-computed embedding. Here FastText embeddings trained over polish Wikipedia are
+      used.
     Model training is based on stratified 10 fold cross validation split indicated by skf_split_no argument.
-    Model and training logs are saved in resources_ex_3/taggers/example-pos/it-<skf_split_no> directory (where
+    Model and training logs are saved in resources_ex_5/taggers/example-pos directory/it-<skf_split_no> (where
     <skf_split_no> is the number of stratified 10 fold cross validation split used to train the model).
-    Additionally method logs other training log files and saves them in the resources_ex_3 directory of this project
-    under the name training_ex_3_<skf_split_no>.log
+    Additionally method logs other training log files and saves them in the resources_ex_5 directory of this project
+    under the name training_ex_5_<skf_split_no>.log
 
     :param skf_split_no: stratified 10 fold cross validation split number (from range 1 to 10) used to train the model
 
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources_ex_3/training_ex_3_' + str(skf_split_no) + '.log',
+    log.basicConfig(filename='resources_ex_5/training_ex_5_' + str(skf_split_no) + '.log',
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
@@ -148,7 +154,7 @@ def train(skf_split_no, jsonl_file_path):
     else:
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data_ex_3'
+    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data_ex_5'
     train_file_name = data_folder + "/train_" + str(skf_split_no)
     test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
