@@ -161,4 +161,7 @@ not to change the original structure of the project.
      - [train_on_V100_ex_5.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_5.sh)  
    * **convert_tsv_to_xml_ex_5.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
-   Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.              
+   Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.  
+   * **download_and_save_pl_fast_text_embeddings_model.py**:
+   It is recommended to run this script before training any model that uses Polish FastText WordEmbeddings in order to use embeddings that are stored locally
+   instead of downloading them for each SKF split during model training.

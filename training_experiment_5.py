@@ -74,6 +74,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
     log.info(tag_dictionary)
     # 4. initialize embeddings
+    local_model_path = 'resources/polish_FastText_embeddings'
     embedding_types: List[TokenEmbeddings] = [
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
@@ -81,7 +82,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
         OneHotEmbeddings(corpus=corpus, field='proposed_tags',
                          embedding_length=math.ceil((proposed_tags_vocabulary_size + 1)**0.25),
                          min_freq=3),
-        WordEmbeddings('pl')
+        WordEmbeddings(local_model_path) if os.path.exists(local_model_path) else WordEmbeddings('pl')
     ]
     embeddings: StackedEmbeddings = StackedEmbeddings(embeddings=embedding_types)
     # 5. initialize sequence tagger
