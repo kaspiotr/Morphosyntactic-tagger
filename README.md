@@ -164,4 +164,6 @@ not to change the original structure of the project.
    Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.  
    * **download_and_save_pl_fast_text_embeddings_model.py**:
    It is recommended to run this script before training any model that uses Polish FastText WordEmbeddings in order to use embeddings that are stored locally
-   instead of downloading them for each SKF split during model training.
+   instead of downloading them for each SKF split during model training.  
+   This script could also be ran on _Prometheus_ with use of following script:
+     - [download_and_save_pl_fast_text_embeddings_model.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/download_and_save_pl_fast_text_embeddings_model.sh)
