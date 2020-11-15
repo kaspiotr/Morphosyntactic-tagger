@@ -65,7 +65,7 @@ def convert_tsv_to_xml(tsv_file_path):
     prettify(xml_doc)
     tree = ET.ElementTree(xml_doc)
     root = tree.getroot()
-    with open("resources_ex_4/test_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
+    with open("resources_ex_5/test_" + split_no + ".xml", "w", encoding='UTF-8') as xf:
         doc_type = '<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE cesAna ' \
                'SYSTEM "xcesAnaIPI.dtd">\n'
         to_string = ET.tostring(root, encoding='utf-8').decode('utf-8')
