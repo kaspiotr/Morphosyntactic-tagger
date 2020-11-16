@@ -26,6 +26,11 @@ def _count_occurs(key, dictionary):
         dictionary[key] = 1
 
 
+def use_scratch_dir_if_available(path):
+    return os.environ.get('SCRATCH') + path if os.environ.get('SCRATCH') is not None \
+                                               and os.path.exists(os.environ.get('SCRATCH') + path) else path
+
+
 def map_paragraph_id_to_text_category_name(paragraph, text_cat_to_no_of_els):
     """
     Converts paragraph id (<NKJP corpora directory id>+_+<no of paragraph in that directory>)
