@@ -155,15 +155,31 @@ not to change the original structure of the project.
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
    If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:  
    `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
-   This script will train models for given (as a parameter) SKF split number. This time model will be trained in with the same configuration as the basic one (trained with script **training.py**), but this time  
+   This script will train models for given (as a parameter) SKF split number. This time model will be trained with the same configuration as the basic one (trained with script **training.py**), but this time  
    trained model will have also static WordEmbeddings (FastText embeddings trained over Polish Wikipedia) in its StackedEmbeddings configuration:
      - [train_on_K40XL_ex_5.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_5.sh)
      - [train_on_V100_ex_5.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_5.sh)  
    * **convert_tsv_to_xml_ex_5.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
    Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.  
-   * **download_and_save_pl_fast_text_embeddings_model.py**:
+   * **download_and_save_pl_fast_text_embeddings_model.py**:  
    It is recommended to run this script before training any model that uses Polish FastText WordEmbeddings in order to use embeddings that are stored locally
    instead of downloading them for each SKF split during model training.  
    This script could also be ran on _Prometheus_ with use of following script:
-     - [download_and_save_pl_fast_text_embeddings_model.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/download_and_save_pl_fast_text_embeddings_model.sh)
+     - [download_and_save_pl_fast_text_embeddings_model.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/download_and_save_pl_fast_text_embeddings_model.sh)  
+ * Sixth experiment:  
+   * **training_experiment_6.py**:  
+   You can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
+   If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
+   `python3 maca_and_nkjp_output_merge.py 1`  
+   If you moved *maca_output_marked* to another directory (other that *output*) provide as a second argument of the script full path to that directory. Run script as follows:  
+   `python3 maca_and_nkjp_output_merge.py 1 -file_path=/home/kaspiotr/Dev/MorphosyntacticTagger/output/maca_output_marked.jsonl`  
+   If you left *maca_output_marked* in *output* directory of the project but renamed it provide the name of that *.jsonl file as a second argument of the script:  
+   `python3 maca_and_nkjp_output_merge.py 1 -file_path=renamed_file_name`  
+   This script will train models for given (as a parameter) SKF split number. This time model will be trained with the same configuration as the basic one (trained with script **training.py**), but this time  
+   trained model will have also static WordEmbeddings (FastText embeddings trained over Polish Wikipedia) in its StackedEmbeddings configuration. Furthermore trained model will have 2 RNN layers (parameter rnn_layers=2):
+     - [train_on_K40XL_ex_6.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_K40XL_ex_6.sh)
+     - [train_on_V100_ex_6.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_6.sh)  
+   * **convert_tsv_to_xml_ex_6.py**:  
+   This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
+   Files *test_n.xml* are saved in _resources_ex_6_ directory of this project.  
