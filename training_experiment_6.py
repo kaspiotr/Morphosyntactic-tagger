@@ -152,14 +152,11 @@ def train(skf_split_no, jsonl_file_path):
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
         file_name = jsonl_file_path.split('/')[-1]
-        maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/'
-        + file_name + '.jsonl' if os.environ.get('SCRATCH') is None \
-            else os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl'
+        maca_output_serialized_from_nkjp_marked_file = (os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl') if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl')
     else:
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data_ex_6' if os.environ.get('SCRATCH') is None \
-        else os.environ.get('SCRATCH') + '/data_ex_6'
+    data_folder = (os.path.dirname(os.path.abspath(__file__)) + '/data_ex_6') if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/data_ex_6')
     train_file_name = data_folder + "/train_" + str(skf_split_no)
     test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
