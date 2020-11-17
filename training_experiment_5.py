@@ -5,7 +5,8 @@ from flair.models import SequenceTagger
 from flair.trainers import ModelTrainer
 from flair.visual.training_curves import Plotter
 from sklearn.model_selection import StratifiedKFold
-from training import map_paragraph_id_to_text_category_name, _write_paragraph_to_file
+from training import map_paragraph_id_to_text_category_name, _write_paragraph_to_file, use_scratch_dir_if_available, \
+    prepare_output_file_path, prepare_skf_splits_data_folder
 from typing import List
 import argparse
 import os
@@ -74,7 +75,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     tag_dictionary = corpus.make_tag_dictionary(tag_type=tag_type)
     log.info(tag_dictionary)
     # 4. initialize embeddings
-    local_model_path = 'resources/polish_FastText_embeddings'
+    local_model_path = use_scratch_dir_if_available('resources/polish_FastText_embeddings')
     embedding_types: List[TokenEmbeddings] = [
         FlairEmbeddings('pl-forward', chars_per_chunk=64),
         FlairEmbeddings('pl-backward', chars_per_chunk=64),
@@ -95,7 +96,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no),
+    trainer.train(use_scratch_dir_if_available('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no)),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -103,7 +104,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
+    plotter.plot_weights(use_scratch_dir_if_available('resources_ex_5/taggers/example-pos/it-' + str(skf_split_no)
+                                                      + '/weights.txt'))
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -145,17 +147,17 @@ def train(skf_split_no, jsonl_file_path):
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources_ex_5/training_ex_5_' + str(skf_split_no) + '.log',
+    log.basicConfig(filename=use_scratch_dir_if_available('resources_ex_5/training_ex_5_' + str(skf_split_no) + '.log'),
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
         file_name = jsonl_file_path.split('/')[-1]
-        maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl'
+        maca_output_serialized_from_nkjp_marked_file = prepare_output_file_path(file_name)
     else:
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data_ex_5'
+    data_folder = prepare_skf_splits_data_folder('data_ex_5')
     train_file_name = data_folder + "/train_" + str(skf_split_no)
     test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
@@ -194,7 +196,7 @@ def main():
                                              "10-fold cross validation used to train the model", type=int)
     parser.add_argument("-file_path",
                         help="The absolute path with name of the saved *.jsonl file or just the name of that file.",
-                        default='/output/maca_output_marked',
+                        default=use_scratch_dir_if_available('/output/maca_output_marked'),
                         type=str)
     args = parser.parse_args()
     train(args.skf_split_no, args.file_path)

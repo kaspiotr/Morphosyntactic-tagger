@@ -26,9 +26,21 @@ def _count_occurs(key, dictionary):
         dictionary[key] = 1
 
 
+def prepare_output_file_path(file_name):
+    return (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl') \
+            if os.environ.get('SCRATCH') is not None \
+               and os.path.exists(os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl') \
+            else (os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl')
+
+
+def prepare_skf_splits_data_folder(folder_name):
+    return (os.environ.get('SCRATCH') + '/' + folder_name) if os.environ.get('SCRATCH') is not None and os.path.exists(os.environ.get('SCRATCH') + '/' + folder_name) else (os.path.dirname(os.path.abspath(__file__)) + '/' + folder_name)
+
 def use_scratch_dir_if_available(path):
-    return os.environ.get('SCRATCH') + path if os.environ.get('SCRATCH') is not None \
-                                               and os.path.exists(os.environ.get('SCRATCH') + path) else path
+    local_path = path
+    if not path.startswith("/"):
+        path = "/" + path
+    return os.environ.get('SCRATCH') + path if os.environ.get('SCRATCH') is not None and os.path.exists(os.environ.get('SCRATCH') + path) else local_path
 
 
 def map_paragraph_id_to_text_category_name(paragraph, text_cat_to_no_of_els):
@@ -444,7 +456,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train('resources/taggers/example-pos/it-' + str(skf_split_no),
+    trainer.train(use_scratch_dir_if_available('resources/taggers/example-pos/it-' + str(skf_split_no)),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -452,7 +464,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights('resources/taggers/example-pos/it-' + str(skf_split_no) + '/weights.txt')
+    plotter.plot_weights(use_scratch_dir_if_available('resources/taggers/example-pos/it-' + str(skf_split_no)
+                                                      + '/weights.txt'))
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -491,17 +504,17 @@ def train(skf_split_no, jsonl_file_path):
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename='resources/training_' + str(skf_split_no) + '.log', format='%(levelname)s:%(message)s',
-                    level=log.INFO)
+    log.basicConfig(filename=use_scratch_dir_if_available('resources/training_' + str(skf_split_no) + '.log'),
+                    format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
         file_name = jsonl_file_path.split('/')[-1]
-        maca_output_serialized_from_nkjp_marked_file = os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl'
+        maca_output_serialized_from_nkjp_marked_file = prepare_output_file_path(file_name)
     else:
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
-    data_folder = os.path.dirname(os.path.abspath(__file__)) + '/data'
+    data_folder = prepare_skf_splits_data_folder('data')
     train_file_name = data_folder + "/train_" + str(skf_split_no)
     test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
@@ -540,7 +553,7 @@ def main():
                                              "10-fold cross validation used to train the model", type=int)
     parser.add_argument("-file_path",
                         help="The absolute path with name of the saved *.jsonl file or just the name of that file.",
-                        default='/output/maca_output_marked',
+                        default=use_scratch_dir_if_available('/output/maca_output_marked'),
                         type=str)
     args = parser.parse_args()
     train(args.skf_split_no, args.file_path)

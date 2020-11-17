@@ -60,7 +60,7 @@ not to change the original structure of the project.
     - No. of MACA tokens with 'ign' tag and base_form: *13547*
     - No. of MACA tokens with 'ign' tag and base_form set from the NKJP: *0*
     - No. of MACA tokens with 'ign' base_form and tag set from the NKJP: *0*
- * **training.py**:
+ * **training.py** (with use of the 1-million-word NCP subcorpus and stratified 10-fold cross validation method):
    * you can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
    If you didn't changed anything (renamed file *maca_output_marked* or moved it to another directory) this file should be called *maca_output_marked* and located in *output* directory of this project. In that case you can run script like that:  
    `python3 maca_and_nkjp_output_merge.py 1`  
@@ -81,7 +81,17 @@ not to change the original structure of the project.
    This script could also be ran on _Prometheus_ with use of following script (it is essential to run it on the same host training was done due to get the same SKF split to this made during training of the model):
      - [convert_nkjp_to_xml.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/convert_nkjp_to_xml.sh) 
      
- #### Experiments:  
+ #### Experiments (with use of the 1-million-word NCP subcorpus and stratified 10-fold cross validation method):  
+ * Scripts that should be run before any of experiments before performing any of experiments mentioned after:  
+   * **download_and_save_pl_fast_text_embeddings_model.py**:  
+   It is recommended to run this script before training any model that uses Polish FastText WordEmbeddings (WordEmbeddings('pl') in its StackedEmbeddings configuration) in order to use embeddings that are stored locally
+   instead of downloading them for each stratified k-fold cross validation split during model training.  
+   This script could also be ran on _Prometheus_ with use of following script:
+     - [download_and_save_pl_fast_text_embeddings_model.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/download_and_save_pl_fast_text_embeddings_model.sh)
+   * **create_and_save_polish_letters_dictionary.py**:  
+   If model use in its StackedEmbeddings configuration CharacterEmbeddings it is recommended to run the following script before training such a model in order to have every possible Polish letter in dictionary that they are using.  
+   In order to do so on _Prometheus_ run following script:
+     - [create_and_save_polish_letters_dictionary.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/create_and_save_polish_letters_dictionary.sh)  
  * First experiment:  
    * **training_without_backward_model.py**:      
    You can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   
@@ -161,12 +171,7 @@ not to change the original structure of the project.
      - [train_on_V100_ex_5.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_5.sh)  
    * **convert_tsv_to_xml_ex_5.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
-   Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.  
-   * **download_and_save_pl_fast_text_embeddings_model.py**:  
-   It is recommended to run this script before training any model that uses Polish FastText WordEmbeddings in order to use embeddings that are stored locally
-   instead of downloading them for each SKF split during model training.  
-   This script could also be ran on _Prometheus_ with use of following script:
-     - [download_and_save_pl_fast_text_embeddings_model.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/download_and_save_pl_fast_text_embeddings_model.sh)  
+   Files *test_n.xml* are saved in _resources_ex_5_ directory of this project.    
  * Sixth experiment:  
    * **training_experiment_6.py**:  
    You can ran this script providing as it's first argument stratified 10 fold (SKF) cross validation split (from range 1 to 10) that you want to use for training the model and second argument with the name of *.jsonl file created by *maca_and_nkjp_output_merge.py* script.   

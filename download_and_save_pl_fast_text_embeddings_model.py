@@ -1,6 +1,7 @@
 import gensim
 from flair import file_utils
 from pathlib import Path
+from training import use_scratch_dir_if_available
 import os
 
 
@@ -15,7 +16,7 @@ def download_and_save_embeddings_model(save_path):
 
 
 def main():
-    download_and_save_embeddings_model('resources/polish_FastText_embeddings')
+    download_and_save_embeddings_model(use_scratch_dir_if_available('resources/polish_FastText_embeddings'))
 
 
 if __name__ == '__main__':
