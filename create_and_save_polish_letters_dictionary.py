@@ -2,9 +2,8 @@ from flair.data import Dictionary
 from training import use_scratch_dir_if_available
 
 
-def create_local_polish_letters_dictionary_based_on_common():
+def create_local_polish_letters_dictionary_based_on_common(dictionary_name):
     dictionary = Dictionary.load(name="chars")
-    print(len(dictionary.get_items()))  # Outputs 275
     dictionary.add_item('Ą')
     dictionary.add_item('ą')
     dictionary.add_item('Ć')
@@ -23,11 +22,11 @@ def create_local_polish_letters_dictionary_based_on_common():
     dictionary.add_item('ź')
     dictionary.add_item('Ż')
     dictionary.add_item('ż')
-    dictionary.save(use_scratch_dir_if_available('resources/polish_letters_dict'))
+    dictionary.save(use_scratch_dir_if_available('resources/' + dictionary_name))
 
 
 def main():
-    create_local_polish_letters_dictionary_based_on_common()
+    create_local_polish_letters_dictionary_based_on_common('polish_letters_dict')
 
 
 if __name__ == '__main__':
