@@ -5,8 +5,7 @@ from flair.models import SequenceTagger
 from flair.trainers import ModelTrainer
 from flair.visual.training_curves import Plotter
 from sklearn.model_selection import StratifiedKFold
-from training import map_paragraph_id_to_text_category_name, _write_paragraph_to_file, use_scratch_dir_if_available, \
-    prepare_output_file_path, prepare_skf_splits_data_folder
+from training import map_paragraph_id_to_text_category_name, _write_paragraph_to_file, use_scratch_dir_if_available
 from typing import List
 import argparse
 import os
@@ -125,11 +124,11 @@ def train(skf_split_no, jsonl_file_path):
     log.info("Is CUDA available: %s " % torch.cuda.is_available())
     if '/'.join(jsonl_file_path.split('/')[:-1]) == '/output':
         file_name = jsonl_file_path.split('/')[-1]
-        maca_output_serialized_from_nkjp_marked_file = prepare_output_file_path(file_name)
+        maca_output_serialized_from_nkjp_marked_file = (os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl') if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl')
     else:
         maca_output_serialized_from_nkjp_marked_file = jsonl_file_path
     # this is the folder in which train and test files reside
-    data_folder = prepare_skf_splits_data_folder('data_ex_2')
+    data_folder = (os.path.dirname(os.path.abspath(__file__)) + '/data_ex_2') if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/data_ex_2')
     train_file_name = data_folder + "/train_" + str(skf_split_no)
     test_file_name = data_folder + "/test_" + str(skf_split_no)
     with jsonlines.open(maca_output_serialized_from_nkjp_marked_file) as reader:
