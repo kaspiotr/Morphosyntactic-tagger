@@ -27,17 +27,12 @@ def _count_occurs(key, dictionary):
 
 
 def prepare_output_file_path(file_name):
-    return (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl') \
-            if os.environ.get('SCRATCH') is not None \
-               and os.path.exists(os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl') \
-            else (os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl')
+    return (os.path.dirname(os.path.abspath(__file__)) + '/output/' + file_name + '.jsonl') if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl')
 
 
 def prepare_skf_splits_data_folder(folder_name):
-    return (os.environ.get('SCRATCH') + '/' + folder_name) \
-        if os.environ.get('SCRATCH') is not None \
-           and os.path.exists(os.environ.get('SCRATCH') + '/' + folder_name) \
-        else (os.path.dirname(os.path.abspath(__file__)) + '/' + folder_name)
+    return (os.path.dirname(os.path.abspath(__file__)) + '/' + folder_name) if os.environ.get('SCRATCH') is None else (os.environ.get('SCRATCH') + '/' + folder_name)
+
 
 def use_scratch_dir_if_available(path):
     local_path = path
