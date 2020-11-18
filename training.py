@@ -366,16 +366,13 @@ def _write_paragraph_to_file(paragraphs_np_array, paragraphs_indexes, destinatio
         log.info("Train set statistics:")
         log.info("Train file name: %s" % destination_file_name)
     for paragraph_json_idx in paragraphs_indexes:
-        log.info("Pierwszy for paragraphs")
         for sentence in paragraphs_np_array.item(paragraph_json_idx)["sentences"]:
-            log.info("Drugi for sentences")
             sentences_no += 1
             for _ in sentence["sentence"]:
                 tokens_no += 1
             if is_test_set or sentence["match"]:
                 sentences_that_match_no += 1
                 for token in sentence["sentence"]:
-                    log.info("Trzeci for tokens")
                     tokens_that_match_no += 1
                     token_json = token["token"]
                     unique_proposed_tags_list = _get_unique_list_of_proposed_tags(token_json["proposed_tags"])
