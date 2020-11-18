@@ -76,7 +76,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
     # 6. initialize trainer
     trainer: ModelTrainer = ModelTrainer(tagger, corpus)
     # 7. start training
-    trainer.train(use_scratch_dir_if_available('resources_ex_2/taggers/example-pos/it-' + str(skf_split_no)),
+    trainer.train(use_scratch_dir_if_available('resources_ex_2') + '/taggers/example-pos/it-' + str(skf_split_no),
                   learning_rate=0.1,
                   mini_batch_size=32,
                   embeddings_storage_mode='gpu',
@@ -84,8 +84,8 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size, sk
                   monitor_test=True)
     # 8. plot weight traces (optional)
     plotter = Plotter()
-    plotter.plot_weights(use_scratch_dir_if_available('resources_ex_2/taggers/example-pos/it-' + str(skf_split_no)
-                                                      + '/weights.txt'))
+    plotter.plot_weights(use_scratch_dir_if_available('resources_ex_2') + '/taggers/example-pos/it-' + str(skf_split_no)
+                         + '/weights.txt')
 
 
 def train(skf_split_no, jsonl_file_path):
@@ -119,7 +119,7 @@ def train(skf_split_no, jsonl_file_path):
     :param jsonl_file_path: file in *.jsonl format with paragraphs in a form of a JSON in each line or absolute path to
     that file
     """
-    log.basicConfig(filename=use_scratch_dir_if_available('resources_ex_2/training_ex_2_' + str(skf_split_no) + '.log'),
+    log.basicConfig(filename=use_scratch_dir_if_available('resources_ex_2') + '/training_ex_2_' + str(skf_split_no) + '.log',
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
     log.info("Is CUDA available: %s " % torch.cuda.is_available())

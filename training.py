@@ -34,13 +34,19 @@ def prepare_output_file_path(file_name):
 
 
 def prepare_skf_splits_data_folder(folder_name):
-    return (os.environ.get('SCRATCH') + '/' + folder_name) if os.environ.get('SCRATCH') is not None and os.path.exists(os.environ.get('SCRATCH') + '/' + folder_name) else (os.path.dirname(os.path.abspath(__file__)) + '/' + folder_name)
+    return (os.environ.get('SCRATCH') + '/' + folder_name) \
+        if os.environ.get('SCRATCH') is not None \
+           and os.path.exists(os.environ.get('SCRATCH') + '/' + folder_name) \
+        else (os.path.dirname(os.path.abspath(__file__)) + '/' + folder_name)
 
 def use_scratch_dir_if_available(path):
     local_path = path
     if not path.startswith("/"):
         path = "/" + path
-    return os.environ.get('SCRATCH') + path if os.environ.get('SCRATCH') is not None and os.path.exists(os.environ.get('SCRATCH') + path) else local_path
+    return os.environ.get('SCRATCH') + path \
+        if os.environ.get('SCRATCH') is not None \
+           and os.path.exists(os.environ.get('SCRATCH') + path) \
+        else local_path
 
 
 def map_paragraph_id_to_text_category_name(paragraph, text_cat_to_no_of_els):
