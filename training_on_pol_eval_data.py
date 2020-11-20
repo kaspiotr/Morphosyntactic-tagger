@@ -95,8 +95,8 @@ def train(train_gold_file_path, train_analyzed_file_path, gold_task_a_b_file_pat
     total_proposed_tags_no = 0
     for tag in proposed_tags_dict:
         total_proposed_tags_no += proposed_tags_dict[tag]
-        log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
-        log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
+    log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
+    log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
     # train_sequence_labeling_model(data_folder, len(proposed_tags_dict))
 
 
@@ -151,7 +151,12 @@ def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
                     line_content += " True "
                 unique_proposed_tags_list = list(set(proposed_tags))
                 unique_proposed_tags_list.sort(reverse=False)
-                line_content += ";".join(unique_proposed_tags_list)
+                joined_proposed_tag = ";".join(unique_proposed_tags_list)
+                if joined_proposed_tag not in proposed_tags_dict:
+                    proposed_tags_dict[joined_proposed_tag] = 1
+                else:
+                    proposed_tags_dict[joined_proposed_tag] += 1
+                line_content += joined_proposed_tag
                 line_content += "\n"
                 yield line_content
                 proposed_tags = []
@@ -162,7 +167,7 @@ def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
                     line_content += "\n"
                 else:
                     is_first_sentence_of_file = False
-
+    log.info("Length of proposed tags dictionary based on train and test files: %s" % len(proposed_tags_dict))
 
 def parse_train_xmls(train_gold_file_path, train_analyzed_file_path, proposed_tags_dict):
     line_content = ""
