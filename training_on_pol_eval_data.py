@@ -65,7 +65,7 @@ def train_sequence_labeling_model(data_folder, proposed_tags_vocabulary_size):
     plotter.plot_weights(use_scratch_dir_if_available('resources_pol_eval/taggers/example-pos/weights.txt'))
 
 
-def train(train_gold_file_path, train_analyzed_file_path):
+def train(train_gold_file_path, train_analyzed_file_path, gold_task_a_b_file_path):
     log.basicConfig(filename=use_scratch_dir_if_available('resources_pol_eval/training.log'),
                     format='%(levelname)s:%(message)s', level=log.INFO)
     log.info(flair.device)
@@ -80,27 +80,27 @@ def train(train_gold_file_path, train_analyzed_file_path):
         train_analyzed_file = prepare_resources_pol_eval_file_path(file_name)
     else:
         train_analyzed_file = train_analyzed_file_path
+    if '/'.join(gold_task_a_b_file_path.split('/')[:-1]) == '/resources_pol_eval':
+        file_name = gold_task_a_b_file_path.split('/')[-1]
+        gold_task_a_b_file = prepare_resources_pol_eval_file_path(file_name)
+    else:
+        gold_task_a_b_file = train_analyzed_file_path
     # this is the folder in which train and test files reside
     data_folder = prepare_skf_splits_data_folder('data_pol_eval')
     train_file_name = data_folder + "/train"
     test_file_name = data_folder + "/test"
-    create_train_data_file_from_xml(parse_xml, train_gold_file, train_analyzed_file, train_file_name)
     proposed_tags_dict = {}
-    # for paragraph in reader:
-    #         paragraphs_X.append(paragraph)
-    #         paragraph_text_category_y.append(map_paragraph_id_to_text_category_name(paragraph, text_category_to_number_of_elements))
-    #             _write_paragraph_to_file(X, train_index, train_file_name, proposed_tags_dict, False)
-    #             _write_paragraph_to_file(X, test_index, test_file_name, proposed_tags_dict)
-    #             total_proposed_tags_no = 0
-    #             for tag in proposed_tags_dict:
-    #                 total_proposed_tags_no += proposed_tags_dict[tag]
-    #             log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
-    #             log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
-    #             train_sequence_labeling_model(data_folder, len(proposed_tags_dict))
-    #         iteration_no += 1
+    create_train_data_file_from_xmls(parse_train_xmls, train_gold_file, train_analyzed_file, train_file_name, proposed_tags_dict)
+    create_test_data_file_from_xml(parse_test_xml, gold_task_a_b_file, test_file_name, proposed_tags_dict)
+    total_proposed_tags_no = 0
+    for tag in proposed_tags_dict:
+        total_proposed_tags_no += proposed_tags_dict[tag]
+        log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
+        log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
+    # train_sequence_labeling_model(data_folder, len(proposed_tags_dict))
 
 
-def parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content, generator):
+def parse_proposed_tags_from_train_analyzed_file(line_content, generator):
     is_first_proposed_tag = True
     for event_analyzed_file, element_analyzed_file in generator:
         if event_analyzed_file == "start":
@@ -118,7 +118,53 @@ def parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_
                 yield line_content, generator
 
 
-def parse_xml(train_gold_file_path, train_analyzed_file_path):
+def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
+    line_content = ""
+    is_first_sentence_of_file = True
+    is_first_token_in_sentence = True
+    ns_occurred = False
+    proposed_tags = []
+    for event, element in ET.iterparse(gold_task_a_b_file_path, events=("start", "end",)):
+        if event == "start":
+            if element.tag == 'ns':
+                ns_occurred = True
+            if element.tag == 'tok':
+                if not is_first_token_in_sentence:
+                    line_content += "\n"
+                else:
+                    is_first_sentence_of_file = False
+            if element.tag == 'chunk' and element.get('type') == 's':
+                is_first_token_in_sentence = True
+        if event == "end":
+            if element.tag == "orth":
+                line_content += element.text
+            if element.tag == "lex" and element.get('disamb') is not None and element.get('disamb') == '1':
+                line_content += " " + element[1].text
+                # line_content += " " + element.text
+            if element.tag == "ctag":
+                proposed_tags.append(element.text)
+            if element.tag == "tok":
+                if ns_occurred:
+                    line_content += " False "
+                    ns_occurred = False
+                else:
+                    line_content += " True "
+                unique_proposed_tags_list = list(set(proposed_tags))
+                unique_proposed_tags_list.sort(reverse=False)
+                line_content += ";".join(unique_proposed_tags_list)
+                line_content += "\n"
+                yield line_content
+                proposed_tags = []
+                element.clear()
+                line_content = ""
+            if element.tag == 'chunk' and element.get('type') == 's':
+                if not is_first_sentence_of_file:
+                    line_content += "\n"
+                else:
+                    is_first_sentence_of_file = False
+
+
+def parse_train_xmls(train_gold_file_path, train_analyzed_file_path, proposed_tags_dict):
     line_content = ""
     is_first_sentence_of_file = True
     is_first_token_in_sentence = True
@@ -146,7 +192,7 @@ def parse_xml(train_gold_file_path, train_analyzed_file_path):
                     ns_occurred = False
                 else:
                     line_content += " True "
-                line_content, generator = next(parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content, generator))
+                line_content, generator = next(parse_proposed_tags_from_train_analyzed_file(line_content, generator))
                 yield line_content
                 element.clear()
                 line_content = ""
@@ -157,23 +203,35 @@ def parse_xml(train_gold_file_path, train_analyzed_file_path):
                     is_first_sentence_of_file = False
 
 
-def create_train_data_file_from_xml(parsing_generator, train_gold_file_path, train_analyzed_file_path, train_file_path):
-    for train_file_line in parsing_generator(train_gold_file_path, train_analyzed_file_path):
+def create_train_data_file_from_xmls(parsing_generator, train_gold_file_path, train_analyzed_file_path, train_file_path, proposed_tags_dict):
+    for train_file_line in parsing_generator(train_gold_file_path, train_analyzed_file_path, proposed_tags_dict):
         write_to_file(train_file_path, train_file_line)
+
+
+def create_test_data_file_from_xml(parsing_generator, gold_task_a_b_file_path, test_file_path, proposed_tags_dict):
+    for test_file_line in parsing_generator(gold_task_a_b_file_path, proposed_tags_dict):
+        write_to_file(test_file_path, test_file_line)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-train_gold_file_path",
-                        help="The absolute path with name of the saved train-gold.xml file or just the name of that file.",
+                        help="The absolute path with name of the saved train-gold.xml file or just the name of that"
+                             " file.",
                         default=use_scratch_dir_if_available('/resources_pol_eval/train-gold'),
                         type=str)
     parser.add_argument("-train_analyzed_file_path",
-                        help="The absolute path with name of the saved train-analyzed.xml file or just the name of that file.",
+                        help="The absolute path with name of the saved train-analyzed.xml file or just the name of that"
+                             " file.",
                         default=use_scratch_dir_if_available('/resources_pol_eval/train-analyzed'),
                         type=str)
+    parser.add_argument("-gold_task_a_b_file_path",
+                        help="The absolute path with name of the saved gold-task-a-b.xml file or just the name of that"
+                             " file.",
+                        default=use_scratch_dir_if_available('/resources_pol_eval/gold-task-a-b'),
+                        type=str)
     args = parser.parse_args()
-    train(args.train_gold_file_path, args.train_analyzed_file_path)
+    train(args.train_gold_file_path, args.train_analyzed_file_path, args.gold_task_a_b_file_path)
 
 
 if __name__ == '__main__':
