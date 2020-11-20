@@ -4,15 +4,14 @@ from flair.embeddings import FlairEmbeddings, StackedEmbeddings, TokenEmbeddings
 from flair.models import SequenceTagger
 from flair.trainers import ModelTrainer
 from flair.visual.training_curves import Plotter
-from training import map_paragraph_id_to_text_category_name, _write_paragraph_to_file, use_scratch_dir_if_available, \
-    prepare_skf_splits_data_folder, prepare_resources_pol_eval_file_path, write_to_file
+from training import use_scratch_dir_if_available, prepare_skf_splits_data_folder, \
+    prepare_resources_pol_eval_file_path, write_to_file
 from typing import List
 import argparse
 import os
 import xml.etree.ElementTree as ET
 import logging as log
 import math
-import numpy as np
 import flair
 import torch
 import sys
@@ -101,9 +100,9 @@ def train(train_gold_file_path, train_analyzed_file_path):
     #         iteration_no += 1
 
 
-def parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content):
+def parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content, generator):
     is_first_proposed_tag = True
-    for event_analyzed_file, element_analyzed_file in ET.iterparse(train_analyzed_file_path, events=("start", "end",)):
+    for event_analyzed_file, element_analyzed_file in generator:
         if event_analyzed_file == "start":
             if element_analyzed_file.tag == "ctag":
                 if not is_first_proposed_tag:
@@ -116,7 +115,7 @@ def parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_
             if element_analyzed_file.tag == "tok":
                 is_first_proposed_tag = True
                 line_content += "\n"
-                yield line_content
+                yield line_content, generator
 
 
 def parse_xml(train_gold_file_path, train_analyzed_file_path):
@@ -124,6 +123,7 @@ def parse_xml(train_gold_file_path, train_analyzed_file_path):
     is_first_sentence_of_file = True
     is_first_token_in_sentence = True
     ns_occurred = False
+    generator = ET.iterparse(train_analyzed_file_path, events=("start", "end",))
     for event, element in ET.iterparse(train_gold_file_path, events=("start", "end",)):
         if event == "start":
             if element.tag == 'ns':
@@ -146,17 +146,15 @@ def parse_xml(train_gold_file_path, train_analyzed_file_path):
                     ns_occurred = False
                 else:
                     line_content += " True "
-                line_content = next(parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content))
+                line_content, generator = next(parse_proposed_tags_from_train_analyzed_file(train_analyzed_file_path, line_content, generator))
                 yield line_content
                 element.clear()
                 line_content = ""
-            # if element.tag == 'chunk' and element.get('type') == 's':
-            #     if not is_first_sentence_of_file:
-            #         line_content += "\n\n"
-            #         yield line_content
-            #         # element.clear()
-            #     else:
-            #         is_first_sentence_of_file = False
+            if element.tag == 'chunk' and element.get('type') == 's':
+                if not is_first_sentence_of_file:
+                    line_content += "\n"
+                else:
+                    is_first_sentence_of_file = False
 
 
 def create_train_data_file_from_xml(parsing_generator, train_gold_file_path, train_analyzed_file_path, train_file_path):
