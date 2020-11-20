@@ -26,6 +26,13 @@ def _count_occurs(key, dictionary):
         dictionary[key] = 1
 
 
+def prepare_resources_pol_eval_file_path(file_name):
+    return (os.environ.get('SCRATCH') + '/resources_pol_eval/' + file_name + '.xml') \
+        if os.environ.get('SCRATCH') is not None \
+           and os.path.exists(os.environ.get('SCRATCH') + '/resources_pol_eval/' + file_name + '.xml') \
+        else (os.path.dirname(os.path.abspath(__file__)) + '/resources_pol_eval/' + file_name + '.xml')
+
+
 def prepare_output_file_path(file_name):
     return (os.environ.get('SCRATCH') + '/output/' + file_name + '.jsonl') \
         if os.environ.get('SCRATCH') is not None \
