@@ -97,25 +97,27 @@ def train(train_gold_file_path, train_analyzed_file_path, gold_task_a_b_file_pat
         total_proposed_tags_no += proposed_tags_dict[tag]
     log.info("Total proposed tags no.: %s" % total_proposed_tags_no)
     log.info("Proposed tags classes no.: %s" % len(proposed_tags_dict))
-    # train_sequence_labeling_model(data_folder, len(proposed_tags_dict))
+    train_sequence_labeling_model(data_folder, len(proposed_tags_dict))
 
 
-def parse_proposed_tags_from_train_analyzed_file(line_content, generator):
-    is_first_proposed_tag = True
+def parse_proposed_tags_from_train_analyzed_file(line_content, generator, proposed_tags_dict):
+    proposed_tags_list = []
     for event_analyzed_file, element_analyzed_file in generator:
-        if event_analyzed_file == "start":
-            if element_analyzed_file.tag == "ctag":
-                if not is_first_proposed_tag:
-                    line_content += ";"
-                else:
-                    is_first_proposed_tag = False
         if event_analyzed_file == "end":
             if element_analyzed_file.tag == "ctag":
-                line_content += element_analyzed_file.text
+                proposed_tags_list.append(element_analyzed_file.text)
             if element_analyzed_file.tag == "tok":
-                is_first_proposed_tag = True
+                unique_proposed_tags_list = list(set(proposed_tags_list))
+                unique_proposed_tags_list.sort(reverse=False)
+                joined_proposed_tag = ";".join(unique_proposed_tags_list)
+                if joined_proposed_tag not in proposed_tags_dict:
+                    proposed_tags_dict[joined_proposed_tag] = 1
+                else:
+                    proposed_tags_dict[joined_proposed_tag] += 1
+                line_content += joined_proposed_tag
                 line_content += "\n"
                 yield line_content, generator
+                proposed_tags_list = []
 
 
 def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
@@ -140,7 +142,6 @@ def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
                 line_content += element.text
             if element.tag == "lex" and element.get('disamb') is not None and element.get('disamb') == '1':
                 line_content += " " + element[1].text
-                # line_content += " " + element.text
             if element.tag == "ctag":
                 proposed_tags.append(element.text)
             if element.tag == "tok":
@@ -168,6 +169,7 @@ def parse_test_xml(gold_task_a_b_file_path, proposed_tags_dict):
                 else:
                     is_first_sentence_of_file = False
     log.info("Length of proposed tags dictionary based on train and test files: %s" % len(proposed_tags_dict))
+
 
 def parse_train_xmls(train_gold_file_path, train_analyzed_file_path, proposed_tags_dict):
     line_content = ""
@@ -197,7 +199,7 @@ def parse_train_xmls(train_gold_file_path, train_analyzed_file_path, proposed_ta
                     ns_occurred = False
                 else:
                     line_content += " True "
-                line_content, generator = next(parse_proposed_tags_from_train_analyzed_file(line_content, generator))
+                line_content, generator = next(parse_proposed_tags_from_train_analyzed_file(line_content, generator, proposed_tags_dict))
                 yield line_content
                 element.clear()
                 line_content = ""
@@ -206,6 +208,7 @@ def parse_train_xmls(train_gold_file_path, train_analyzed_file_path, proposed_ta
                     line_content += "\n"
                 else:
                     is_first_sentence_of_file = False
+    log.info("Length of proposed tags dictionary based on train file only: %s" % len(proposed_tags_dict))
 
 
 def create_train_data_file_from_xmls(parsing_generator, train_gold_file_path, train_analyzed_file_path, train_file_path, proposed_tags_dict):
