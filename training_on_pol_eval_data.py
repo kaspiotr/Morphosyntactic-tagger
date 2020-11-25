@@ -161,10 +161,7 @@ def parse_test_xmls(test_analyzed_file_path, gold_task_a_b_file_path, proposed_t
                 unique_proposed_tags_list = list(set(proposed_tags))
                 unique_proposed_tags_list.sort(reverse=False)
                 joined_proposed_tag = ";".join(unique_proposed_tags_list)
-                if joined_proposed_tag == "ign":
-                    line_content += " ign"
-                else:
-                    line_content, generator = next(parse_reference_tag_from_gold_task_a_b_file(line_content, generator))
+                line_content, generator = next(parse_reference_tag_from_gold_task_a_b_file(line_content, generator))
                 if ns_occurred:
                     line_content += " False "
                     ns_occurred = False
