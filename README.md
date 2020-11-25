@@ -187,4 +187,25 @@ not to change the original structure of the project.
      - [train_on_V100_ex_6.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_ex_6.sh)  
    * **convert_tsv_to_xml_ex_6.py**:  
    This script converts *test.tsv* file that are generated for each stratified 10-fold cross validation split training to *test_n.xml* file (where *n* is the number of split). Files *test_n.xml* are used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger. 
-   Files *test_n.xml* are saved in _resources_ex_6_ directory of this project.  
+   Files *test_n.xml* are saved in _resources_ex_6_ directory of this project.
+   
+ #### Training with use of the PolEval 2017 data:      
+ Training morphosyntactic tagger model of Polish language based on contextual word embeddings that solves  
+ **Task 1: POS Tagging - Subtask (A): Morphosyntactic disambiguation and guessing**  
+ Task definition is available here: [Subtask (A): Morphosyntactic disambiguation and guessing](http://2017.poleval.pl/index.php/tasks/)  
+ Training data used are available to download [here](http://2017.poleval.pl/index.php/tasks/):  
+   - [train-analyzed.xml.gz](http://2017.poleval.pl/index.php/tasks/train-analyzed.xml.gz) (from this file tokens changed form, )
+   - [train-gold.xml.gz](http://2017.poleval.pl/index.php/tasks/train-gold.xml.gz)
+ Test data used are available to download [here](http://2017.poleval.pl/index.php/results/):  
+   - [test-analyzed.xml.gz](http://2017.poleval.pl/index.php/tasks/train-gold.xml.gz)
+   - [gold-task-a-b.xml.gz](http://2017.poleval.pl/index.php/results/gold-task-a-b.xml.gz)
+ * **training_on_pol_eval_data.py**:  
+ Script used to train tagger's model with the same configuration as the one trained in _Sixth_experiment_ described above. Before you ran this script you need to create directories called _data_pol_eval_ and _resources_pol_eval_ in the root  
+ directory of this project. Then download to _resources_pol_eval_ directory following files:  
+ _train-analyzed.xml_, _train-gold.xml_ and _test-analyzed.xml_ and _gold-task-a-b.xml files_.   
+ After unzipping downloaded files just run script and you will perform training locally.   
+ To train model on _Prometheus_ you can use following script:
+   - [train_on_V100_pol_eval.sh](https://github.com/kaspiotr/Morphosyntactic-tagger/blob/master/train_on_V100_pol_eval.sh)  
+ * **convert_tsv_to_xml_pol_eval.py**:  
+   This script converts *test.tsv* file that are generated in model's training to *test.xml* file.  
+   File *test.xml* is used by [*tagger-eval.py*](https://github.com/kaspiotr/Morphosyntactic-tagger-evaluation/blob/master/tagger-eval.py) script to evaluate tagger model. 
