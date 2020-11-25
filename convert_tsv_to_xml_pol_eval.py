@@ -48,9 +48,14 @@ def _create_orth_and_lex_objects(token_data, token_object):
     lex = ET.SubElement(token_object, 'lex', disamb='1')
     base = ET.SubElement(lex, 'base')
     ctag = ET.SubElement(lex, 'ctag')
-    orth.text = token_data.split(' ')[0]
-    base.text = token_data.split(' ')[0]
-    ctag.text = token_data.split(' ')[2]
+    if not token_data.startswith("m. in"):
+        orth.text = token_data.split(' ')[0] if token_data.split(' ')[0] != "&quot;" else "\""
+        base.text = token_data.split(' ')[0]
+        ctag.text = token_data.split(' ')[2]
+    else:
+        orth.text = "m. in"
+        base.text = "m. in"
+        ctag.text = "xxx"
 
 
 def convert_tsv_to_xml(tsv_file_path):
@@ -78,8 +83,8 @@ def create_xml_file(paragraph_object):
 
 
 def read_sentence_from_tsv():
-    with open("resources_pol_eval/taggers/example-pos/test.tsv") as fd:
-        rd = csv.reader(fd, delimiter="\t")
+    with open("resources_pol_eval/taggers/example-pos/test_corrected.tsv") as fd:
+        rd = csv.reader(fd, delimiter="\t", skipinitialspace=True)
         sentence = []
         for row in rd:
             if row:
@@ -99,9 +104,19 @@ def read_sentence_from_tsv():
                 sentence.clear()
 
 
+def correct_tsv_file_quotes(tsv_test_file):
+    with open(tsv_test_file, 'r') as file:
+        filedata = file.read()
+    filedata = filedata.replace('"', '&quot;')
+    corrected_file_path = "/".join(tsv_test_file.split('/')[:-1]) + "/test_corrected.tsv"
+    with open(corrected_file_path, 'w') as file_corr:
+        file_corr.write(filedata)
+    return corrected_file_path
+
 def main():
     tsv_file_path = os.path.abspath(os.path.dirname(os.path.abspath(__file__))) + "/resources_pol_eval/taggers/example-pos/test.tsv"
-    convert_tsv_to_xml(tsv_file_path)
+    corrected_file_path = correct_tsv_file_quotes(tsv_file_path)
+    convert_tsv_to_xml(corrected_file_path)
 
 
 if __name__ == '__main__':

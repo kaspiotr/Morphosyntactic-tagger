@@ -96,7 +96,7 @@ def train(train_gold_file_path, train_analyzed_file_path, test_analyzed_file_pat
     test_file_name = data_folder + "/test"
     proposed_tags_dict = {}
     create_train_data_file_from_xmls(parse_train_xmls, train_gold_file, train_analyzed_file, train_file_name, proposed_tags_dict)
-    create_test_data_file_from_xml(parse_test_xmls, test_analyzed_file_path, gold_task_a_b_file, test_file_name, proposed_tags_dict)
+    # create_test_data_file_from_xml(parse_test_xmls, test_analyzed_file_path, gold_task_a_b_file, test_file_name, proposed_tags_dict)
     total_proposed_tags_no = 0
     for tag in proposed_tags_dict:
         total_proposed_tags_no += proposed_tags_dict[tag]
