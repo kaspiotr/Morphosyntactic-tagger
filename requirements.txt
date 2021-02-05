@@ -28,7 +28,7 @@ distro==1.5.0
 docutils==0.15.2
 entrypoints==0.3
 flair==0.6.0.post1
-Flask==0.12.2
+Flask==1.0
 Flask-BabelEx==0.9.3
 Flask-Compress==1.4.0
 Flask-Gravatar==0.4.2
