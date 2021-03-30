@@ -108,7 +108,7 @@ py==1.8.0
 pyasn1==0.4.2
 pycparser==2.19
 pycrypto==2.6.1
-Pygments==2.5.2
+Pygments==2.7.4
 pyinotify==0.9.6
 pymacaroons==0.13.0
 pymongo==3.9.0
